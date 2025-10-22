@@ -994,18 +994,21 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                Observações
-              </label>
-              <textarea
-                value={formData.observations}
-                onChange={(e) => handleChange('observations', e.target.value)}
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                placeholder="Observações adicionais, condições do solo, intercorrências, etc."
-              />
-            </div>
+            {/* Observações - Não exibir para Ficha técnica de PDA */}
+            {formData.type !== 'Ficha técnica de PDA' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                  Observações
+                </label>
+                <textarea
+                  value={formData.observations}
+                  onChange={(e) => handleChange('observations', e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                  placeholder="Observações adicionais, condições do solo, intercorrências, etc."
+                />
+              </div>
+            )}
           </div>
         </div>
 

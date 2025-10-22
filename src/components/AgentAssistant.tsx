@@ -97,10 +97,10 @@ export const AgentAssistant: React.FC = () => {
   return (
     <>
       {/* Toggle */}
-      <div className="fixed right-4 bottom-4 z-50">
+      <div className="fixed right-4 bottom-20 md:bottom-4 z-[60]">
         {/* Tooltip fixo */}
         {!open && (
-          <div className="absolute right-16 bottom-2 bg-gray-900 dark:bg-gray-700 text-white text-sm px-3 py-2 rounded-lg shadow-lg whitespace-nowrap">
+          <div className="absolute right-16 bottom-2 bg-gray-900 dark:bg-gray-700 text-white text-sm px-3 py-2 rounded-lg shadow-lg whitespace-nowrap hidden sm:block">
             Precisa de ajuda?
             <div className="absolute right-0 top-1/2 transform translate-x-1 -translate-y-1/2 w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45"></div>
           </div>
@@ -108,15 +108,15 @@ export const AgentAssistant: React.FC = () => {
         
         <button
           onClick={() => setOpen(!open)}
-          className="rounded-full bg-green-600 hover:bg-green-700 text-white p-4 shadow-lg hover:shadow-xl transition-all duration-200 group"
+          className="rounded-full bg-green-600 hover:bg-green-700 text-white p-3 sm:p-4 shadow-lg hover:shadow-xl transition-all duration-200 group min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
           title="Assistente IA"
         >
-          {open ? <X className="w-5 h-5" /> : <Bot className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />}
+          {open ? <X className="w-4 h-4 sm:w-5 sm:h-5" /> : <Bot className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform duration-200" />}
         </button>
       </div>
 
       {open && (
-        <div className="fixed right-4 bottom-20 z-50 w-[calc(100%-2rem)] max-w-md max-h-[80vh] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden flex flex-col">
+        <div className="fixed right-2 sm:right-4 bottom-24 sm:bottom-20 md:bottom-20 z-[60] w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-md max-h-[70vh] sm:max-h-[80vh] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden flex flex-col">
           <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm">
               <button
@@ -132,7 +132,13 @@ export const AgentAssistant: React.FC = () => {
                 Chat
               </button>
             </div>
-            <Scissors className="w-4 h-4 text-gray-400" />
+            <button
+              onClick={() => setOpen(false)}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
+              title="Fechar assistente"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
           <div className="p-3 space-y-3 flex-1 overflow-y-auto">

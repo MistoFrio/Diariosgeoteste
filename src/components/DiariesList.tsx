@@ -592,25 +592,26 @@ export const DiariesList: React.FC<DiariesListProps> = ({ onNewDiary }) => {
 
   if (selectedDiary) {
     return (
-      <div className="max-w-4xl mx-auto px-3 sm:px-0">
-        <div className="mb-4 sm:mb-6 flex items-center justify-between">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+        <div className="mb-3 sm:mb-4 lg:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <button
             onClick={() => setSelectedDiary(null)}
-            className="text-green-600 hover:text-green-700 font-medium"
+            className="text-green-600 hover:text-green-700 font-medium text-sm sm:text-base flex items-center gap-2 self-start"
           >
-            ← Voltar à lista
+            <span className="text-lg">←</span>
+            <span>Voltar à lista</span>
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <button
               onClick={handleExport}
-              className="bg-green-600 text-white px-4 sm:px-5 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center space-x-2"
+              className="bg-green-600 text-white px-3 sm:px-4 lg:px-5 py-2 sm:py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Exportar PDF</span>
             </button>
             <button
               onClick={handleExportCsvOne}
-              className="bg-white border border-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg font-medium hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+              className="bg-white border border-gray-300 text-gray-700 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors text-sm sm:text-base"
               title="Exportar para Excel (CSV)"
             >
               CSV
@@ -618,8 +619,8 @@ export const DiariesList: React.FC<DiariesListProps> = ({ onNewDiary }) => {
           </div>
         </div>
 
-        {/* Diary Details */}
-        <div ref={detailsRef} className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+        {/* Diary Details - Container responsivo */}
+        <div ref={detailsRef} className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden w-full">
           <DiaryPDFLayout
             diary={selectedDiary}
             pceDetail={pceDetail}

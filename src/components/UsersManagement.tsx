@@ -285,31 +285,33 @@ export const UsersManagement: React.FC = () => {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 md:mb-8 space-y-3 sm:space-y-0">
-        <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">Gerenciamento de Usuários</h1>
-          <p className="text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-300">Cadastre e gerencie os usuários do sistema</p>
+      <div className="flex flex-col space-y-3 mb-4 sm:mb-6 md:mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-3 sm:space-y-0">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2 truncate">Gerenciamento de Usuários</h1>
+            <p className="text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-300">Cadastre e gerencie os usuários do sistema</p>
+          </div>
+          
+          <button
+            onClick={() => handleOpenModal()}
+            className="w-full sm:w-auto bg-green-600 text-white px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 rounded-lg font-medium hover:bg-green-700 hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center space-x-2 min-h-[44px] touch-manipulation"
+          >
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+            <span className="text-sm sm:text-base font-medium">Novo Usuário</span>
+          </button>
         </div>
-        
-        <button
-          onClick={() => handleOpenModal()}
-          className="w-full sm:w-auto bg-green-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium hover:bg-green-700 hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center justify-center space-x-2"
-        >
-          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="text-sm sm:text-base">Novo Usuário</span>
-        </button>
       </div>
 
       {/* Search */}
       <div className="mb-4 sm:mb-6">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
           <input
             type="text"
             placeholder="Buscar usuários..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="w-full pl-9 sm:pl-10 pr-4 py-3 sm:py-3.5 text-sm sm:text-base border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent min-h-[44px] touch-manipulation"
           />
         </div>
       </div>
@@ -343,62 +345,63 @@ export const UsersManagement: React.FC = () => {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
                   <tr>
-                    <th className="text-left py-3 px-6 font-medium text-gray-700 dark:text-gray-300">Usuário</th>
-                    <th className="text-left py-3 px-6 font-medium text-gray-700 dark:text-gray-300">Email</th>
-                    <th className="text-left py-3 px-6 font-medium text-gray-700 dark:text-gray-300">Função</th>
-                    <th className="text-left py-3 px-6 font-medium text-gray-700 dark:text-gray-300">Criado em</th>
-                    <th className="text-center py-3 px-6 font-medium text-gray-700 dark:text-gray-300">Ações</th>
+                    <th className="text-left py-3 px-4 lg:px-6 font-medium text-gray-700 dark:text-gray-300">Usuário</th>
+                    <th className="text-left py-3 px-4 lg:px-6 font-medium text-gray-700 dark:text-gray-300">Email</th>
+                    <th className="text-left py-3 px-4 lg:px-6 font-medium text-gray-700 dark:text-gray-300">Função</th>
+                    <th className="text-left py-3 px-4 lg:px-6 font-medium text-gray-700 dark:text-gray-300">Criado em</th>
+                    <th className="text-center py-3 px-4 lg:px-6 font-medium text-gray-700 dark:text-gray-300">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredUsers.map((user) => (
                   <tr key={user.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td className="py-4 px-6">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                          <User className="text-green-600 dark:text-green-400 w-5 h-5" />
+                    <td className="py-3 lg:py-4 px-4 lg:px-6">
+                      <div className="flex items-center space-x-2 lg:space-x-3">
+                        <div className="w-8 h-8 lg:w-10 lg:h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                          <User className="text-green-600 dark:text-green-400 w-4 h-4 lg:w-5 lg:h-5" />
                         </div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">{user.name}</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100 text-sm lg:text-base truncate">{user.name}</p>
                       </div>
                     </td>
-                    <td className="py-4 px-6">
+                    <td className="py-3 lg:py-4 px-4 lg:px-6">
                       <div className="flex items-center space-x-2">
-                        <Mail className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-600 dark:text-gray-300">{user.email}</span>
+                        <Mail className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-600 dark:text-gray-300 text-sm lg:text-base truncate">{user.email}</span>
                       </div>
                     </td>
-                    <td className="py-4 px-6">
+                    <td className="py-3 lg:py-4 px-4 lg:px-6">
                       {user.role === 'admin' ? (
-                        <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs font-medium rounded-full">
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          <span>Administrador</span>
+                        <span className="inline-flex items-center space-x-1 lg:space-x-1.5 px-2 lg:px-2.5 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs font-medium rounded-full">
+                          <ShieldCheck className="w-3 h-3 lg:w-3.5 lg:h-3.5 flex-shrink-0" />
+                          <span className="hidden lg:inline">Administrador</span>
+                          <span className="lg:hidden">Admin</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-medium rounded-full">
-                          <Shield className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center space-x-1 lg:space-x-1.5 px-2 lg:px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-medium rounded-full">
+                          <Shield className="w-3 h-3 lg:w-3.5 lg:h-3.5 flex-shrink-0" />
                           <span>Usuário</span>
                         </span>
                       )}
                     </td>
-                    <td className="py-4 px-6 text-gray-600 dark:text-gray-300">
+                    <td className="py-3 lg:py-4 px-4 lg:px-6 text-gray-600 dark:text-gray-300 text-sm lg:text-base">
                       {new Date(user.createdAt).toLocaleDateString('pt-BR')}
                     </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center justify-center space-x-2">
+                    <td className="py-3 lg:py-4 px-4 lg:px-6">
+                      <div className="flex items-center justify-center space-x-1 lg:space-x-2">
                         <button
                           onClick={() => handleOpenModal(user)}
-                          className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          className="p-1.5 lg:p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                           title="Editar"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteClick(user.id, user.name)}
-                          className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                          className="p-1.5 lg:p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Excluir"
                           disabled={user.id === currentUser?.id}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                         </button>
                       </div>
                     </td>
@@ -411,55 +414,57 @@ export const UsersManagement: React.FC = () => {
             {/* Mobile Cards - Hidden on desktop */}
             <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
               {filteredUsers.map((user) => (
-                <div key={user.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                        <User className="text-green-600 dark:text-green-400 w-6 h-6" />
+                <div key={user.id} className="p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <div className="flex items-start justify-between mb-2 sm:mb-3">
+                    <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="text-green-600 dark:text-green-400 w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 dark:text-white text-base truncate">{user.name}</p>
-                        <div className="flex items-center space-x-1.5 mt-1">
-                          <Mail className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                          <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{user.email}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">{user.name}</p>
+                        <div className="flex items-center space-x-1 sm:space-x-1.5 mt-0.5 sm:mt-1">
+                          <Mail className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 flex-shrink-0" />
+                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">{user.email}</p>
                         </div>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                    <div className="flex items-center space-x-3">
+                  <div className="flex items-center justify-between mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                       {user.role === 'admin' ? (
-                        <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs font-medium rounded-full">
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          <span>Admin</span>
+                        <span className="inline-flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-2.5 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs font-medium rounded-full">
+                          <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                          <span className="hidden xs:inline">Admin</span>
+                          <span className="xs:hidden">A</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-medium rounded-full">
-                          <Shield className="w-3.5 h-3.5" />
-                          <span>Usuário</span>
+                        <span className="inline-flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-medium rounded-full">
+                          <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                          <span className="hidden xs:inline">Usuário</span>
+                          <span className="xs:hidden">U</span>
                         </span>
                       )}
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                         {new Date(user.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                       </span>
                     </div>
                     
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center space-x-0.5 sm:space-x-1 flex-shrink-0">
                       <button
                         onClick={() => handleOpenModal(user)}
-                        className="p-2.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        className="p-2 sm:p-2.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
                         title="Editar"
                       >
-                        <Edit className="w-5 h-5" />
+                        <Edit className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                       <button
                         onClick={() => handleDeleteClick(user.id, user.name)}
-                        className="p-2.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 sm:p-2.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
                         title="Excluir"
                         disabled={user.id === currentUser?.id}
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                     </div>
                   </div>
