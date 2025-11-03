@@ -636,7 +636,6 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
           </div>
           <div>
             <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{formData.type === 'PDA' ? 'Nova Ficha Técnica de PDA' : 'Novo Diário de Obra'}</h1>
-            <p className="text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-300">Registre os detalhes dos serviços executados</p>
           </div>
         </div>
       </div>
