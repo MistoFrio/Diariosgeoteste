@@ -430,6 +430,8 @@ export const DiariesList: React.FC<DiariesListProps> = ({ onNewDiary }) => {
           setPlacaPiles([]);
         }
 
+        // Condições climáticas agora fazem parte de work_diaries (weather_*), não é necessário buscar separado.
+
         // Buscar Ficha técnica de PDA (fichapda) por diary_id
         const { data: ficha, error: fichaErr } = await supabase
           .from('fichapda')
@@ -485,6 +487,7 @@ export const DiariesList: React.FC<DiariesListProps> = ({ onNewDiary }) => {
       logoUrl: '/logogeoteste.png',
       headerBgColor: '#ECFDF5',
       marginMm: 12,
+      showHeader: false,
     });
   };
 
@@ -742,8 +745,8 @@ export const DiariesList: React.FC<DiariesListProps> = ({ onNewDiary }) => {
                 <option value="PCE">PCE</option>
                 <option value="PIT">PIT</option>
                 <option value="PLACA">PLACA</option>
-                <option value="PDA">Ficha técnica de PDA</option>
-                <option value="PDA_DIARIO">Diário PDA</option>
+                <option value="PDA">Ficha PDA</option>
+                <option value="PDA_DIARIO">PDA</option>
               </select>
             </div>
 

@@ -17,15 +17,14 @@ export const PITDiaryView: React.FC<PITDiaryViewProps> = ({ diary, pitDetail, pi
 
   return (
     <div className="w-full space-y-3">
-      {/* Cabeçalho Principal - Mobile First */}
+      {/* Cabeçalho Principal */}
       <div className="border border-gray-300 rounded-lg overflow-hidden">
-        <div className="bg-gray-50 px-3 py-3 border-b border-gray-300">
+        <div className="bg-gray-100 px-3 py-3 border-b border-gray-300">
           <div className="flex flex-col space-y-2">
             <div className="flex items-center space-x-3">
               <img src="/logogeoteste.png" alt="Geoteste" className="h-8 w-8 flex-shrink-0" />
               <div>
-                <h1 className="text-lg font-bold uppercase text-gray-900">DIÁRIO DE OBRA</h1>
-                <p className="text-sm font-semibold text-gray-600">Nº DA OBRA: {diary.id.slice(-8).toUpperCase()}</p>
+                <h1 className="text-lg font-bold uppercase text-gray-900 tracking-wide">DIÁRIO DE OBRA</h1>
               </div>
             </div>
           </div>
@@ -88,15 +87,7 @@ export const PITDiaryView: React.FC<PITDiaryViewProps> = ({ diary, pitDetail, pi
         </div>
       </div>
 
-      {/* Serviços Executados */}
-      <div className="border border-gray-300 rounded-lg overflow-hidden">
-        <div className="bg-gray-100 px-3 py-2 border-b border-gray-300">
-          <h3 className="font-bold text-sm uppercase text-gray-900">SERVIÇOS EXECUTADOS</h3>
-        </div>
-        <div className="p-3">
-          <div className="text-sm text-gray-900 break-words">{diary.servicesExecuted}</div>
-        </div>
-      </div>
+      
 
       {/* Dados do Ensaio PIT */}
       <div className="border border-gray-300 rounded-lg overflow-hidden">
@@ -172,7 +163,7 @@ export const PITDiaryView: React.FC<PITDiaryViewProps> = ({ diary, pitDetail, pi
               <img
                 src={diary.geotestSignatureImage}
                 alt="Assinatura digital"
-                className="w-full h-12 object-contain"
+                className="h-12 w-auto max-w-full object-contain mx-auto block"
               />
             </div>
           )}
@@ -186,17 +177,7 @@ export const PITDiaryView: React.FC<PITDiaryViewProps> = ({ diary, pitDetail, pi
         </div>
       </div>
 
-      {/* Observações */}
-      {diary.observations && (
-        <div className="border border-gray-300 rounded-lg overflow-hidden">
-          <div className="bg-gray-100 px-3 py-2 border-b border-gray-300">
-            <h3 className="font-bold text-xs uppercase text-gray-900">OBSERVAÇÕES</h3>
-          </div>
-          <div className="p-3">
-            <div className="text-sm text-gray-900 break-words">{diary.observations}</div>
-          </div>
-        </div>
-      )}
+      {/* Observações renderizadas apenas no layout genérico */}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search, Plus, Building2, Mail, Phone, MapPin, Edit, Trash2 } from 'lucide-react';
 import { Client } from '../types';
 import { useToast } from '../contexts/ToastContext';
@@ -7,8 +7,9 @@ import EmptyState from './EmptyState';
 import FormInput from './FormInput';
 import FormTextarea from './FormTextarea';
 import { useFormValidation } from '../hooks/useFormValidation';
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
-// Mock data
+// Mock data (fallback quando Supabase não estiver configurado)
 const mockClients: Client[] = [
   {
     id: '1',
@@ -30,7 +31,7 @@ const mockClients: Client[] = [
 
 export const ClientsManagement: React.FC = () => {
   const toast = useToast();
-  const [clients, setClients] = useState<Client[]>(mockClients);
+  const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -39,6 +40,7 @@ export const ClientsManagement: React.FC = () => {
     clientId: string | null;
     clientName: string | null;
   }>({ isOpen: false, clientId: null, clientName: null });
+  const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -58,6 +60,40 @@ export const ClientsManagement: React.FC = () => {
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const mapRowToClient = (row: any): Client => ({
+    id: row.id,
+    name: row.name || '',
+    email: row.email || '',
+    phone: row.phone || '',
+    address: row.address || '',
+    createdAt: row.created_at || row.createdAt || new Date().toISOString(),
+  });
+
+  const fetchClients = async () => {
+    if (!isSupabaseConfigured) {
+      setClients(mockClients);
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setClients((data || []).map(mapRowToClient));
+    } catch (err: any) {
+      toast.error('Erro ao carregar clientes');
+      setClients([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
   const handleOpenModal = (client?: Client) => {
     if (client) {
@@ -92,48 +128,101 @@ export const ClientsManagement: React.FC = () => {
     resetValidation();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     // Validar formulário
     if (!validateForm(formData)) {
       toast.error('Por favor, corrija os erros no formulário');
       return;
     }
-    
-    if (editingClient) {
-      // Update existing client
-      setClients(prev => prev.map(client => 
-        client.id === editingClient.id 
-          ? { ...client, ...formData }
-          : client
-      ));
-      toast.success('Cliente atualizado com sucesso!');
-    } else {
-      // Add new client
-      const newClient: Client = {
-        id: Date.now().toString(),
-        ...formData,
-        createdAt: new Date().toISOString()
-      };
-      setClients(prev => [...prev, newClient]);
-      toast.success('Cliente cadastrado com sucesso!');
+
+    if (!isSupabaseConfigured) {
+      // Fallback local quando não há Supabase
+      if (editingClient) {
+        setClients(prev => prev.map(client => client.id === editingClient.id ? { ...client, ...formData } : client));
+        toast.success('Cliente atualizado (modo local)');
+      } else {
+        const newClient: Client = { id: Date.now().toString(), ...formData, createdAt: new Date().toISOString() };
+        setClients(prev => [mapRowToClient(newClient), ...prev]);
+        toast.success('Cliente cadastrado (modo local)');
+      }
+      handleCloseModal();
+      return;
     }
-    
-    handleCloseModal();
+
+    try {
+      setLoading(true);
+      if (editingClient) {
+        const { data, error } = await supabase
+          .from('clients')
+          .update({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            address: formData.address,
+          })
+          .eq('id', editingClient.id)
+          .select('*')
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          const updated = mapRowToClient(data);
+          setClients(prev => prev.map(c => c.id === updated.id ? updated : c));
+        }
+        toast.success('Cliente atualizado com sucesso!');
+      } else {
+        const { data, error } = await supabase
+          .from('clients')
+          .insert({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            address: formData.address,
+          })
+          .select('*')
+          .single();
+        if (error) throw error;
+        if (data) {
+          const created = mapRowToClient(data);
+          setClients(prev => [created, ...prev]);
+        }
+        toast.success('Cliente cadastrado com sucesso!');
+      }
+      handleCloseModal();
+    } catch (err: any) {
+      toast.error('Erro ao salvar cliente');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteClick = (clientId: string, clientName: string) => {
     setConfirmDialog({ isOpen: true, clientId, clientName });
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     const { clientId } = confirmDialog;
     if (!clientId) return;
-    
-    setClients(prev => prev.filter(client => client.id !== clientId));
-    toast.success('Cliente excluído com sucesso!');
-    setConfirmDialog({ isOpen: false, clientId: null, clientName: null });
+
+    if (!isSupabaseConfigured) {
+      setClients(prev => prev.filter(client => client.id !== clientId));
+      toast.success('Cliente excluído (modo local)');
+      setConfirmDialog({ isOpen: false, clientId: null, clientName: null });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { error } = await supabase.from('clients').delete().eq('id', clientId);
+      if (error) throw error;
+      setClients(prev => prev.filter(client => client.id !== clientId));
+      toast.success('Cliente excluído com sucesso!');
+    } catch (err: any) {
+      toast.error('Erro ao excluir cliente');
+    } finally {
+      setLoading(false);
+      setConfirmDialog({ isOpen: false, clientId: null, clientName: null });
+    }
   };
 
   return (
@@ -164,6 +253,13 @@ export const ClientsManagement: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent hover:border-green-400 hover:shadow-md transition-all duration-200"
           />
+          <button
+            onClick={fetchClients}
+            disabled={loading}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-green-700 dark:text-green-300 hover:underline disabled:opacity-50"
+          >
+            {loading ? 'Atualizando...' : 'Atualizar'}
+          </button>
         </div>
       </div>
 

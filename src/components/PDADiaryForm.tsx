@@ -7,6 +7,7 @@ export interface PDADiaryPile {
   profundidadeM: string; // número em string
   cargaTrabalhoTf: string; // número em string
   cargaEnsaioTf: string; // número em string
+  confirmado?: boolean;
 }
 
 export interface PDADiaryFormData {
@@ -68,7 +69,7 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
 
   const addRow = () => {
     setField((d) => {
-      d.piles.push({ nome: '', tipo: '', diametroCm: '', profundidadeM: '', cargaTrabalhoTf: '', cargaEnsaioTf: '' });
+      d.piles.push({ nome: '', tipo: '', diametroCm: '', profundidadeM: '', cargaTrabalhoTf: '', cargaEnsaioTf: '', confirmado: false });
     });
   };
 
@@ -76,7 +77,7 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
     setField((d) => {
       d.piles.splice(index, 1);
       if (d.piles.length === 0) {
-        d.piles.push({ nome: '', tipo: '', diametroCm: '', profundidadeM: '', cargaTrabalhoTf: '', cargaEnsaioTf: '' });
+        d.piles.push({ nome: '', tipo: '', diametroCm: '', profundidadeM: '', cargaTrabalhoTf: '', cargaEnsaioTf: '', confirmado: false });
       }
     });
   };
@@ -165,6 +166,7 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
                         onChange={(e) => updateRow(idx, (p) => { p.nome = e.target.value; })}
                         className="w-40 sm:w-44 md:w-48 px-2 py-1.5 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
                         placeholder="E-01"
+                        disabled={row.confirmado}
                       />
                     </td>
                     <td className="py-2 px-3">
@@ -174,6 +176,7 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
                         onChange={(e) => updateRow(idx, (p) => { p.tipo = e.target.value; })}
                         className="w-36 sm:w-40 md:w-44 px-2 py-1.5 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
                         placeholder="Pré-moldada"
+                        disabled={row.confirmado}
                       />
                     </td>
                     <td className="py-2 px-3">
@@ -184,6 +187,7 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
                         onChange={(e) => updateRow(idx, (p) => { p.diametroCm = e.target.value; })}
                         className="w-28 px-2 py-1.5 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
                         placeholder="50"
+                        disabled={row.confirmado}
                       />
                     </td>
                     <td className="py-2 px-3">
@@ -194,6 +198,7 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
                         onChange={(e) => updateRow(idx, (p) => { p.profundidadeM = e.target.value; })}
                         className="w-28 px-2 py-1.5 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
                         placeholder="12.5"
+                        disabled={row.confirmado}
                       />
                     </td>
                     <td className="py-2 px-3">
@@ -204,6 +209,7 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
                         onChange={(e) => updateRow(idx, (p) => { p.cargaTrabalhoTf = e.target.value; })}
                         className="w-28 px-2 py-1.5 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
                         placeholder="40"
+                        disabled={row.confirmado}
                       />
                     </td>
                     <td className="py-2 px-3">
@@ -214,10 +220,31 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
                         onChange={(e) => updateRow(idx, (p) => { p.cargaEnsaioTf = e.target.value; })}
                         className="w-28 px-2 py-1.5 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
                         placeholder="60"
+                        disabled={row.confirmado}
                       />
                     </td>
                     <td className="py-2 pl-3">
-                      <button type="button" onClick={() => removeRow(idx)} className="text-red-600 hover:text-red-700 text-xs font-medium">Remover</button>
+                      {row.confirmado ? (
+                        <button
+                          type="button"
+                          onClick={() => removeRow(idx)}
+                          className="text-red-600 hover:text-red-700 text-xs font-medium"
+                        >
+                          Remover
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setField((d) => {
+                              d.piles[idx].confirmado = true;
+                            });
+                          }}
+                          className="text-green-600 hover:text-green-700 text-xs font-medium"
+                        >
+                          Confirmar estaca
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -296,7 +323,21 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
                   </div>
                 </div>
                 <div className="mt-3">
-                  <button type="button" onClick={() => removeRow(idx)} className="text-red-600 hover:text-red-700 text-xs font-medium">Remover</button>
+                  {row.confirmado ? (
+                    <button type="button" onClick={() => removeRow(idx)} className="text-red-600 hover:text-red-700 text-xs font-medium">Remover</button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setField((d) => {
+                          d.piles[idx].confirmado = true;
+                        });
+                      }}
+                      className="text-green-600 hover:text-green-700 text-xs font-medium"
+                    >
+                      Confirmar estaca
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

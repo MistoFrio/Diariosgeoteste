@@ -6,6 +6,7 @@ type ExportOptions = {
   logoUrl?: string; // ex: '/logogeoteste.jpeg'
   headerBgColor?: string; // ex: '#F0FDF4'
   marginMm?: number;
+  showHeader?: boolean;
 };
 
 async function loadImageAsDataUrl(url: string): Promise<string> {
@@ -28,21 +29,31 @@ export async function exportElementToPDF(
     logoUrl = '/logogeoteste.png',
     headerBgColor = '#F0FDF4',
     marginMm = 10,
+    showHeader = true,
   } = options;
 
   const canvas = await html2canvas(element, {
-    scale: 2.0, // Escala otimizada para qualidade e tamanho
+    scale: 3.0, // aumentar escala para melhor nitidez (dpi maior)
     useCORS: true,
     backgroundColor: '#ffffff',
     logging: false,
+    letterRendering: true,
+    ignoreElements: (el: Element) => {
+      try {
+        return (el as HTMLElement)?.getAttribute?.('data-pdf-hide') === 'true';
+      } catch {
+        return false;
+      }
+    },
   });
 
-  const contentImgData = canvas.toDataURL('image/png');
+  // Usar JPEG qualidade máxima para reduzir artefatos e manter bom tamanho
+  const contentImgData = canvas.toDataURL('image/jpeg', 1.0);
 
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
-  const headerHeight = 18; // mm
+  const headerHeight = showHeader ? 18 : 0; // mm
 
   const usableWidth = pageWidth - marginMm * 2;
   const contentImgWidth = usableWidth;
@@ -51,7 +62,7 @@ export async function exportElementToPDF(
   const usablePageHeight = pageHeight - marginMm * 2 - headerHeight;
   const totalPages = Math.max(1, Math.ceil(contentImgHeight / usablePageHeight));
 
-  const logoDataUrl = logoUrl ? await loadImageAsDataUrl(logoUrl) : undefined;
+  const logoDataUrl = showHeader && logoUrl ? await loadImageAsDataUrl(logoUrl) : undefined;
 
   const drawHeader = (pageNumber: number) => {
     // Background bar
@@ -79,17 +90,24 @@ export async function exportElementToPDF(
   let positionY = marginMm + headerHeight;
 
   // First page
-  drawHeader(1);
-  pdf.addImage(contentImgData, 'PNG', marginMm, positionY, contentImgWidth, contentImgHeight, undefined, 'FAST');
+  if (showHeader) {
+    drawHeader(1);
+  } else {
+    // Sem cabeçalho: começar o conteúdo logo após a margem
+    positionY = marginMm;
+  }
+  pdf.addImage(contentImgData, 'JPEG', marginMm, positionY, contentImgWidth, contentImgHeight, undefined, 'SLOW');
   heightLeft -= usablePageHeight;
 
   let currentPage = 1;
   while (heightLeft > 0) {
     pdf.addPage();
     currentPage += 1;
-    drawHeader(currentPage);
-    positionY = marginMm + headerHeight - (contentImgHeight - heightLeft);
-    pdf.addImage(contentImgData, 'PNG', marginMm, positionY, contentImgWidth, contentImgHeight, undefined, 'FAST');
+    if (showHeader) {
+      drawHeader(currentPage);
+    }
+    positionY = (showHeader ? marginMm + headerHeight : marginMm) - (contentImgHeight - heightLeft);
+    pdf.addImage(contentImgData, 'JPEG', marginMm, positionY, contentImgWidth, contentImgHeight, undefined, 'SLOW');
     heightLeft -= usablePageHeight;
   }
 

@@ -132,6 +132,13 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
     }
   });
 
+  // Condições climáticas
+  const [weather, setWeather] = useState<{ ensolarado: boolean; chuvaFraca: boolean; chuvaForte: boolean}>({
+    ensolarado: false,
+    chuvaFraca: false,
+    chuvaForte: false,
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -266,7 +273,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
 
       const enderecoCompleto = `${enderecoDetalhado.rua.trim()}, ${enderecoDetalhado.numero.trim()}, ${cidade.nome}, ${estado.nome}`;
 
-      const payload = {
+      const payload: any = {
         user_id: user.id,
         diary_type: formData.type,
         client_name: formData.clientName.trim(),
@@ -289,6 +296,12 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
         responsible_signature: formData.responsibleSignature.trim(),
         observations: formData.observations.trim() || null,
       };
+
+      // Se as colunas existirem no banco, elas serão aceitas; caso não existam, o supabase retornaria erro.
+      // Por isso, só adicionamos no payload se alguma flag estiver marcada, mantendo nulos não enviados.
+      payload.weather_ensolarado = weather.ensolarado;
+      payload.weather_chuva_fraca = weather.chuvaFraca;
+      payload.weather_chuva_forte = weather.chuvaForte;
 
       // 1) Cria o diário base e obtém o id
       const { data: diaryRows, error: insertError } = await supabase
@@ -543,7 +556,10 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
 
         const diarioId = (diarioRow as any)?.id;
         if (diarioId && pdaDiaryData.piles && pdaDiaryData.piles.length > 0) {
-          const rows = pdaDiaryData.piles.map((p, idx) => ({
+          const dataRows = (pdaDiaryData.piles || []).filter((p: any) =>
+            p && (p.confirmado === true || Object.values(p).some((v: any) => typeof v === 'string' ? v.trim() !== '' : false))
+          );
+          const rows = dataRows.map((p, idx) => ({
             pda_diario_id: diarioId,
             ordem: idx + 1,
             nome: p.nome || null,
@@ -648,13 +664,48 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
           </div>
           
           <div className="p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-6">
+            {/* Condições Climáticas */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                Condições Climáticas
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={weather.ensolarado}
+                    onChange={(e) => setWeather((w) => ({ ...w, ensolarado: e.target.checked }))}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-800 dark:text-gray-200">Ensolarado</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={weather.chuvaFraca}
+                    onChange={(e) => setWeather((w) => ({ ...w, chuvaFraca: e.target.checked }))}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-800 dark:text-gray-200">Chuva fraca</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={weather.chuvaForte}
+                    onChange={(e) => setWeather((w) => ({ ...w, chuvaForte: e.target.checked }))}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-800 dark:text-gray-200">Chuva forte</span>
+                </label>
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Tipo de Registro *
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {(['PCE','PLACA','PIT','PDA','PDA_DIARIO'] as const).map((opt) => {
-                  const label = opt === 'PDA' ? 'Ficha técnica de PDA' : opt === 'PDA_DIARIO' ? 'Diário PDA' : opt;
+                  const label = opt === 'PDA' ? 'Ficha PDA' : opt === 'PDA_DIARIO' ? 'PDA' : opt;
                   return (
                     <button
                       key={opt}
@@ -670,9 +721,34 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                  Cliente *
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Cliente *
+                  </label>
+                  {isSupabaseConfigured && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setLoadingClients(true);
+                        try {
+                          const { data: clientsData, error: clientsError } = await supabase
+                            .from('clients')
+                            .select('*')
+                            .order('name');
+                          if (!clientsError && clientsData) {
+                            setClients(clientsData);
+                          }
+                        } finally {
+                          setLoadingClients(false);
+                        }
+                      }}
+                      className="text-xs text-green-700 dark:text-green-300 hover:underline disabled:opacity-50"
+                      disabled={loadingClients}
+                    >
+                      {loadingClients ? 'Atualizando...' : 'Atualizar'}
+                    </button>
+                  )}
+                </div>
                 {loadingClients ? (
                   <div className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 flex items-center">
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -916,24 +992,10 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
 
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
           <div className="p-4 sm:p-5 md:p-6 border-b border-gray-100 dark:border-gray-800 bg-green-50 dark:bg-green-900/20">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Serviços e Assinaturas</h2>
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Assinaturas</h2>
           </div>
           
           <div className="p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                Serviços Executados *
-              </label>
-              <textarea
-                value={formData.servicesExecuted}
-                onChange={(e) => handleChange('servicesExecuted', e.target.value)}
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                placeholder="Descreva detalhadamente os serviços executados no dia..."
-                required
-              />
-            </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
@@ -951,7 +1013,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
                           <img
                             src={formData.geotestSignatureImage}
                             alt="Assinatura digital"
-                            className="w-full h-full object-contain p-2"
+                            className="h-full w-auto max-w-full object-contain p-2"
                           />
                         </div>
                       </div>
