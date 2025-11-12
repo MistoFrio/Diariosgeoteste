@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, FileText, Save, ArrowLeft, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, FileText, Save, ArrowLeft, Loader2, User, Hammer, Wrench, ClipboardList } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import { PCEForm, PCEFormData } from './PCEForm';
@@ -147,6 +147,22 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loadingClients, setLoadingClients] = useState(false);
+  const [activeQuickSheet, setActiveQuickSheet] = useState<
+    | null
+    | 'tipo'
+    | 'data'
+    | 'entrada'
+    | 'saida'
+    | 'equipe'
+    | 'endereco'
+    | 'clima'
+    | 'assinaturas'
+    | 'pce'
+    | 'pit'
+    | 'placa'
+    | 'pda_ficha'
+    | 'pda_diario'
+  >(null);
 
   // Carregar assinatura do usuário e buscar membros da equipe e clientes
   useEffect(() => {
@@ -619,6 +635,139 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
     }));
   };
 
+  const scrollToSection = (id: string) => {
+    try {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } catch {}
+  };
+
+  const isGeneralCompleted = (section: 'data' | 'entrada' | 'saida' | 'equipe' | 'endereco' | 'clima' | 'assinaturas') => {
+    if (section === 'data') return Boolean(formData.date);
+    if (section === 'entrada') return Boolean(formData.startTime);
+    if (section === 'saida') return Boolean(formData.endTime);
+    if (section === 'equipe') return selectedTeamMembers.length > 0 || Boolean(formData.team?.trim());
+    if (section === 'endereco') {
+      return Boolean(
+        enderecoDetalhado.estadoId &&
+          enderecoDetalhado.cidadeId &&
+          enderecoDetalhado.rua.trim() &&
+          enderecoDetalhado.numero.trim()
+      );
+    }
+    if (section === 'clima') return weather.ensolarado || weather.chuvaFraca || weather.chuvaForte;
+    if (section === 'assinaturas') return Boolean(formData.responsibleSignature?.trim());
+    return false;
+  };
+
+  const hasAnyString = (value: any): boolean => {
+    if (!value) return false;
+    if (typeof value === 'string') return value.trim() !== '';
+    if (Array.isArray(value)) {
+      return value.some((item) => hasAnyString(item));
+    }
+    if (typeof value === 'object') {
+      return Object.values(value).some((v) => hasAnyString(v));
+    }
+    return Boolean(value);
+  };
+
+  type QuickKey =
+    | 'tipo'
+    | 'data'
+    | 'entrada'
+    | 'saida'
+    | 'equipe'
+    | 'endereco'
+    | 'clima'
+    | 'assinaturas'
+    | 'pce'
+    | 'pit'
+    | 'placa'
+    | 'pda_ficha'
+    | 'pda_diario';
+
+  const isTypeSpecificCompleted = (key: QuickKey) => {
+    if (key === 'pce') {
+      return (
+        hasAnyString(pceData.equipamentos) ||
+        (pceData.carregamentoTipos || []).length > 0 ||
+        pceData.ocorrencias.trim() !== '' ||
+        (pceData.piles || []).some((pile) => hasAnyString(pile))
+      );
+    }
+    if (key === 'pit') {
+      return (
+        pitData.equipamento !== '' ||
+        pitData.ocorrencias.trim() !== '' ||
+        pitData.totalEstacas.trim() !== '' ||
+        (pitData.piles || []).some((pile) => hasAnyString(pile))
+      );
+    }
+    if (key === 'placa') {
+      return (
+        hasAnyString(placaData.equipamentos) ||
+        placaData.ocorrencias.trim() !== '' ||
+        (placaData.testPoints || []).some((point) => hasAnyString(point))
+      );
+    }
+    if (key === 'pda_ficha') {
+      return (
+        (pdaData.computadorSelecionados || []).length > 0 ||
+        (pdaData.equipamentoSelecionados || []).length > 0 ||
+        hasAnyString(pdaData)
+      );
+    }
+    if (key === 'pda_diario') {
+      return (
+        (pdaDiaryData.pdaComputadores || []).length > 0 ||
+        hasAnyString(pdaDiaryData.abastecimento) ||
+        pdaDiaryData.ocorrencias.trim() !== '' ||
+        (pdaDiaryData.piles || []).some((pile) => hasAnyString(pile))
+      );
+    }
+    return false;
+  };
+
+  const quickItemsForType = (): Array<{ key: QuickKey; label: string; icon: React.ReactNode; completed: boolean }> => {
+    const items: Array<{ key: QuickKey; label: string; icon: React.ReactNode; completed: boolean }> = [
+      { key: 'tipo', label: 'Tipo', icon: <FileText className="w-6 h-6" />, completed: true },
+      { key: 'data', label: 'Data', icon: <Calendar className="w-6 h-6" />, completed: isGeneralCompleted('data') },
+      { key: 'entrada', label: 'Entrada', icon: <Clock className="w-6 h-6" />, completed: isGeneralCompleted('entrada') },
+      { key: 'saida', label: 'Saída', icon: <Clock className="w-6 h-6" />, completed: isGeneralCompleted('saida') },
+      { key: 'equipe', label: 'Equipe', icon: <User className="w-6 h-6" />, completed: isGeneralCompleted('equipe') },
+      { key: 'endereco', label: 'Endereço', icon: <MapPin className="w-6 h-6" />, completed: isGeneralCompleted('endereco') },
+      { key: 'clima', label: 'Clima', icon: <FileText className="w-6 h-6" />, completed: isGeneralCompleted('clima') },
+      { key: 'assinaturas', label: 'Assinaturas', icon: <FileText className="w-6 h-6" />, completed: isGeneralCompleted('assinaturas') },
+    ];
+
+    if (formData.type === 'PCE') {
+      items.push({ key: 'pce', label: 'PCE', icon: <ClipboardList className="w-6 h-6" />, completed: isTypeSpecificCompleted('pce') });
+    } else if (formData.type === 'PIT') {
+      items.push({ key: 'pit', label: 'PIT', icon: <Hammer className="w-6 h-6" />, completed: isTypeSpecificCompleted('pit') });
+    } else if (formData.type === 'PLACA') {
+      items.push({ key: 'placa', label: 'Placa', icon: <Wrench className="w-6 h-6" />, completed: isTypeSpecificCompleted('placa') });
+    } else if (formData.type === 'PDA') {
+      items.push({
+        key: 'pda_ficha',
+        label: 'Ficha PDA',
+        icon: <ClipboardList className="w-6 h-6" />,
+        completed: isTypeSpecificCompleted('pda_ficha'),
+      });
+    } else if (formData.type === 'PDA_DIARIO') {
+      items.push({
+        key: 'pda_diario',
+        label: 'PDA',
+        icon: <ClipboardList className="w-6 h-6" />,
+        completed: isTypeSpecificCompleted('pda_diario'),
+      });
+    }
+
+    return items;
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-3 sm:px-0">
       <div className="mb-4 sm:mb-6 md:mb-8">
@@ -640,6 +789,325 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
         </div>
       </div>
 
+      {/* Página móvel por seção */}
+      {activeQuickSheet && (
+        <div className="fixed inset-0 z-50 md:hidden bg-white dark:bg-gray-900 flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-green-50 dark:bg-green-900/20">
+            <button
+              type="button"
+              onClick={() => setActiveQuickSheet(null)}
+              className="flex items-center text-green-700 dark:text-green-300"
+            >
+              <ArrowLeft className="w-5 h-5 mr-1" /> Voltar
+            </button>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+              {activeQuickSheet === 'tipo' && 'Tipo de Diário'}
+              {activeQuickSheet === 'data' && 'Definir Data'}
+              {activeQuickSheet === 'entrada' && 'Definir Início'}
+              {activeQuickSheet === 'saida' && 'Definir Término'}
+              {activeQuickSheet === 'equipe' && 'Selecionar Equipe'}
+              {activeQuickSheet === 'endereco' && 'Endereço'}
+              {activeQuickSheet === 'clima' && 'Condições Climáticas'}
+              {activeQuickSheet === 'assinaturas' && 'Assinaturas'}
+              {activeQuickSheet === 'pce' && 'Formulário PCE'}
+              {activeQuickSheet === 'pit' && 'Formulário PIT'}
+              {activeQuickSheet === 'placa' && 'Formulário Placa'}
+              {activeQuickSheet === 'pda_ficha' && 'Ficha Técnica PDA'}
+              {activeQuickSheet === 'pda_diario' && 'Diário PDA'}
+            </h3>
+            <div className="w-8" />
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {activeQuickSheet === 'tipo' && (
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Selecione o tipo</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['PCE','PLACA','PIT','PDA','PDA_DIARIO'] as const).map((opt) => {
+                    const label = opt === 'PDA' ? 'Ficha PDA' : opt === 'PDA_DIARIO' ? 'PDA' : opt;
+                    const active = formData.type === opt;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => handleChange('type', opt)}
+                        className={`${active ? 'bg-green-600 text-white border-green-600' : 'bg-white dark:bg-gray-950 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700'} px-3 py-3 rounded-xl font-medium`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {activeQuickSheet === 'data' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Data *</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => handleChange('date', e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            )}
+
+            {activeQuickSheet === 'entrada' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Início *</label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="time"
+                    value={formData.startTime}
+                    onChange={(e) => handleChange('startTime', e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            )}
+
+            {activeQuickSheet === 'saida' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Término *</label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="time"
+                    value={formData.endTime}
+                    onChange={(e) => handleChange('endTime', e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            )}
+
+            {activeQuickSheet === 'equipe' && (
+              <div className="space-y-3">
+                {loadingTeam ? (
+                  <div className="flex items-center justify-center py-8 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                    <span className="ml-2 text-gray-500">Carregando membros da equipe...</span>
+                  </div>
+                ) : (
+                  <div className="max-h-56 overflow-y-auto border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950">
+                    {teamMembers.map((member) => (
+                      <label
+                        key={member.id}
+                        className="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedTeamMembers.includes(member.id)}
+                          onChange={() => handleTeamMemberToggle(member.id)}
+                          className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+                        />
+                        <div className="ml-3">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{member.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{member.email}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeQuickSheet === 'endereco' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Estado *</label>
+                  <select
+                    value={enderecoDetalhado.estadoId}
+                    onChange={(e) => handleEstadoChange(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                  >
+                    <option value={0}>Selecione o estado</option>
+                    {estados.map((estado) => (
+                      <option key={estado.id} value={estado.id}>
+                        {estado.nome} ({estado.sigla})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Cidade *</label>
+                  <select
+                    value={enderecoDetalhado.cidadeId}
+                    onChange={(e) => handleEnderecoChange('cidadeId', Number(e.target.value))}
+                    disabled={enderecoDetalhado.estadoId === 0}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value={0}>Selecione a cidade</option>
+                    {cidades.map((cidade) => (
+                      <option key={cidade.id} value={cidade.id}>
+                        {cidade.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Rua *</label>
+                    <input
+                      type="text"
+                      value={enderecoDetalhado.rua}
+                      onChange={(e) => handleEnderecoChange('rua', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                      placeholder="Nome da rua"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Número *</label>
+                    <input
+                      type="text"
+                      value={enderecoDetalhado.numero}
+                      onChange={(e) => handleEnderecoChange('numero', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                      placeholder="Número"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeQuickSheet === 'clima' && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={weather.ensolarado}
+                    onChange={(e) => setWeather((w) => ({ ...w, ensolarado: e.target.checked }))}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-800 dark:text-gray-200">Ensolarado</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={weather.chuvaFraca}
+                    onChange={(e) => setWeather((w) => ({ ...w, chuvaFraca: e.target.checked }))}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-800 dark:text-gray-200">Chuva fraca</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={weather.chuvaForte}
+                    onChange={(e) => setWeather((w) => ({ ...w, chuvaForte: e.target.checked }))}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-800 dark:text-gray-200">Chuva forte</span>
+                </label>
+              </div>
+            )}
+
+            {activeQuickSheet === 'assinaturas' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Assinatura Responsável da Obra *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.responsibleSignature}
+                    onChange={(e) => handleChange('responsibleSignature', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Nome do responsável"
+                  />
+                </div>
+              </div>
+            )}
+
+            {activeQuickSheet === 'pce' && (
+              <div className="space-y-3">
+                <PCEForm value={pceData} onChange={setPceData} />
+              </div>
+            )}
+            {activeQuickSheet === 'pit' && (
+              <div className="space-y-3">
+                <PITForm value={pitData} onChange={setPitData} />
+              </div>
+            )}
+            {activeQuickSheet === 'placa' && (
+              <div className="space-y-3">
+                <PLACAForm value={placaData} onChange={setPlacaData} />
+              </div>
+            )}
+            {activeQuickSheet === 'pda_ficha' && (
+              <div className="space-y-3">
+                <PDAForm value={pdaData} onChange={setPdaData} />
+              </div>
+            )}
+            {activeQuickSheet === 'pda_diario' && (
+              <div className="space-y-3">
+                <PDADiaryForm value={pdaDiaryData} onChange={setPdaDiaryData} />
+              </div>
+            )}
+          </div>
+
+          <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-800 flex items-center justify-end gap-2 bg-white dark:bg-gray-900">
+            <button
+              type="button"
+              onClick={() => setActiveQuickSheet(null)}
+              className="px-4 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              Voltar
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveQuickSheet(null)}
+              className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              Concluir
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Fluxo com ícones (mobile) */}
+      <div className="md:hidden space-y-4 mb-4">
+        <div>
+          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Tipo de Diário</p>
+          <div className="grid grid-cols-2 gap-2">
+            {(['PCE','PLACA','PIT','PDA','PDA_DIARIO'] as const).map((opt) => {
+              const label = opt === 'PDA' ? 'Ficha PDA' : opt === 'PDA_DIARIO' ? 'PDA' : opt;
+              const active = formData.type === opt;
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => handleChange('type', opt)}
+                  className={`${active ? 'bg-green-600 text-white border-green-600' : 'bg-white dark:bg-gray-950 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700'} px-3 py-3 rounded-xl font-medium`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          {quickItemsForType().map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setActiveQuickSheet(item.key)}
+              className={`flex flex-col items-center justify-center rounded-xl border p-3 active:scale-95 transition ${
+                item.completed ? 'bg-green-700 border-green-700 text-white' : 'bg-white dark:bg-gray-950 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200'
+              }`}
+            >
+              <span className="mb-1 text-green-600">{item.icon}</span>
+              <span className="text-xs font-medium text-center">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Mensagens de erro e sucesso */}
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800 rounded-lg">
@@ -654,7 +1122,8 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+        <div className="hidden md:block space-y-6 sm:space-y-8">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
           <div className="p-4 sm:p-5 md:p-6 border-b border-gray-100 dark:border-gray-800 bg-green-50 dark:bg-green-900/20">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white flex items-center">
               <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-600" />
@@ -664,7 +1133,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
           
           <div className="p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-6">
             {/* Condições Climáticas */}
-            <div>
+            <div id="sec-clima">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Condições Climáticas
               </label>
@@ -719,7 +1188,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
               </div>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              <div>
+              <div id="sec-cliente">
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
                     Cliente *
@@ -771,7 +1240,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
                 )}
               </div>
               
-            <div>
+            <div id="sec-equipe">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Equipe *
               </label>
@@ -833,7 +1302,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
             </div>
 
             {/* Endereço Detalhado */}
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4" id="sec-endereco">
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">
                 Endereço *
               </h3>
@@ -907,7 +1376,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" id="sec-data-horarios">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                   Data *
@@ -957,39 +1426,39 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
               </div>
             </div>
           </div>
-        </div>
-
-        {formData.type === 'PCE' && (
-          <div className="mt-6">
-            <PCEForm value={pceData} onChange={setPceData} />
           </div>
-        )}
 
-        {formData.type === 'PLACA' && (
-          <div className="mt-6">
-            <PLACAForm value={placaData} onChange={setPlacaData} />
-          </div>
-        )}
+          {formData.type === 'PCE' && (
+            <div className="mt-6">
+              <PCEForm value={pceData} onChange={setPceData} />
+            </div>
+          )}
 
-        {formData.type === 'PIT' && (
-          <div className="mt-6">
-            <PITForm value={pitData} onChange={setPitData} />
-          </div>
-        )}
+          {formData.type === 'PLACA' && (
+            <div className="mt-6">
+              <PLACAForm value={placaData} onChange={setPlacaData} />
+            </div>
+          )}
 
-        {formData.type === 'PDA' && (
-          <div className="mt-6">
-            <PDAForm value={pdaData} onChange={setPdaData} />
-          </div>
-        )}
+          {formData.type === 'PIT' && (
+            <div className="mt-6">
+              <PITForm value={pitData} onChange={setPitData} />
+            </div>
+          )}
 
-        {formData.type === 'PDA_DIARIO' && (
-          <div className="mt-6">
-            <PDADiaryForm value={pdaDiaryData} onChange={setPdaDiaryData} />
-          </div>
-        )}
+          {formData.type === 'PDA' && (
+            <div className="mt-6">
+              <PDAForm value={pdaData} onChange={setPdaData} />
+            </div>
+          )}
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+          {formData.type === 'PDA_DIARIO' && (
+            <div className="mt-6">
+              <PDADiaryForm value={pdaDiaryData} onChange={setPdaDiaryData} />
+            </div>
+          )}
+
+          <div id="sec-assinaturas" className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
           <div className="p-4 sm:p-5 md:p-6 border-b border-gray-100 dark:border-gray-800 bg-green-50 dark:bg-green-900/20">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Assinaturas</h2>
           </div>
