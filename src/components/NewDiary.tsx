@@ -1542,6 +1542,8 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
           </div>
         </div>
 
+        </div> {/* end desktop block */}
+
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end space-y-3 sm:space-y-0 sm:space-x-3 md:space-x-4 py-4 sm:py-5 md:py-6">
           <button
             type="button"
