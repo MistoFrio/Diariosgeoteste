@@ -13,13 +13,13 @@ export interface PDAFormData {
 
   pesoMarteloKg: string;
 
-  hq: string[]; // 5 posições, em metros
-  nega: string[]; // 5 posições, em mm
-  emx: string[]; // 5 posições
-  rmx: string[]; // 5 posições
-  dmx: string[]; // 5 posições
+  hq: string[]; // Array dinâmico, em metros
+  nega: string[]; // Array dinâmico, em mm
+  emx: string[]; // Array dinâmico
+  rmx: string[]; // Array dinâmico
+  dmx: string[]; // Array dinâmico
 
-  secaoCravada: string[]; // 5 posições, em metros (opcional)
+  secaoCravada: string[]; // Array dinâmico, em metros (opcional)
 
   // Geometria interativa
   alturaBlocoM: string; // acima da estaca
@@ -29,6 +29,19 @@ export interface PDAFormData {
   ltComprimentoTotalM: string; // comprimento total da estaca
 }
 
+const golpeFieldConfigs: Array<{
+  key: keyof Pick<PDAFormData, 'hq' | 'nega' | 'emx' | 'rmx' | 'dmx'>;
+  label: string;
+  placeholder: string;
+  inputMode?: 'decimal' | 'numeric';
+}> = [
+  { key: 'hq', label: 'Altura de Queda (Hq) [m]', placeholder: 'Hq', inputMode: 'decimal' },
+  { key: 'nega', label: 'Nega (mm)', placeholder: 'Nega', inputMode: 'numeric' },
+  { key: 'emx', label: 'EMX', placeholder: 'EMX', inputMode: 'decimal' },
+  { key: 'rmx', label: 'RMX', placeholder: 'RMX', inputMode: 'decimal' },
+  { key: 'dmx', label: 'DMX', placeholder: 'DMX', inputMode: 'decimal' },
+];
+
 interface PDAFormProps {
   value: PDAFormData;
   onChange: (next: PDAFormData) => void;
@@ -36,7 +49,8 @@ interface PDAFormProps {
 
 export const PDAForm: React.FC<PDAFormProps> = ({ value, onChange }) => {
   const setField = (fn: (draft: PDAFormData) => void) => {
-    const next: PDAFormData = JSON.parse(JSON.stringify(value));
+    // ✅ OTIMIZAÇÃO: structuredClone() é nativo e muito mais rápido que JSON.parse(JSON.stringify())
+    const next: PDAFormData = structuredClone(value);
     fn(next);
     onChange(next);
   };
@@ -58,29 +72,122 @@ export const PDAForm: React.FC<PDAFormProps> = ({ value, onChange }) => {
     });
   };
 
-  const renderFiveInputs = (
+  const addArrayItem = (key: keyof PDAFormData) => {
+    setField((d) => {
+      const arr = ((d[key] as unknown as string[]) || []).slice();
+      arr.push('');
+      (d as any)[key] = arr;
+    });
+  };
+
+  const removeArrayItem = (key: keyof PDAFormData, index: number) => {
+    setField((d) => {
+      const arr = ((d[key] as unknown as string[]) || []).slice();
+      arr.splice(index, 1);
+      (d as any)[key] = arr;
+    });
+  };
+
+  const ensureArrayLength = (arr: string[], index: number) => {
+    const clone = arr.slice();
+    while (clone.length <= index) {
+      clone.push('');
+    }
+    return clone;
+  };
+
+  const updateGolpeValue = (
+    key: keyof Pick<PDAFormData, 'hq' | 'nega' | 'emx' | 'rmx' | 'dmx'>,
+    index: number,
+    valueStr: string
+  ) => {
+    setField((d) => {
+      const current = ensureArrayLength(((d[key] as unknown as string[]) || []), index);
+      current[index] = valueStr;
+      (d as any)[key] = current;
+    });
+  };
+
+  const addGolpe = () => {
+    setField((d) => {
+      golpeFieldConfigs.forEach(({ key }) => {
+        const current = ((d[key] as unknown as string[]) || []).slice();
+        current.push('');
+        (d as any)[key] = current;
+      });
+    });
+  };
+
+  const removeGolpe = (index: number) => {
+    setField((d) => {
+      golpeFieldConfigs.forEach(({ key }) => {
+        const current = ((d[key] as unknown as string[]) || []).slice();
+        if (index < current.length) {
+          current.splice(index, 1);
+        }
+        (d as any)[key] = current;
+      });
+    });
+  };
+
+  const golpeCount = Math.max(
+    value.hq?.length || 0,
+    value.nega?.length || 0,
+    value.emx?.length || 0,
+    value.rmx?.length || 0,
+    value.dmx?.length || 0
+  );
+
+  const renderDynamicInputs = (
     label: string,
     key: keyof PDAFormData,
     placeholder: string,
     inputMode: 'decimal' | 'numeric' = 'decimal'
-  ) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">{label}</label>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
-        {((value[key] as unknown as string[]) || []).map((v, i) => (
-          <input
-            key={i}
-            type="text"
-            inputMode={inputMode}
-            value={v}
-            onChange={(e) => updateArrayIndex(key, i, e.target.value)}
-            className="px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            placeholder={`${placeholder}${i + 1}`}
-          />
-        ))}
+  ) => {
+    const arr = ((value[key] as unknown as string[]) || []);
+    return (
+      <div className="w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">{label}</label>
+          <button
+            type="button"
+            onClick={() => addArrayItem(key)}
+            className="px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-700 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors whitespace-nowrap self-start sm:self-auto"
+          >
+            + Adicionar
+          </button>
+        </div>
+        {arr.length === 0 ? (
+          <div className="text-sm text-gray-500 dark:text-gray-400 italic py-2">
+            Nenhum item adicionado. Clique em "+ Adicionar" para começar.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {arr.map((v, i) => (
+              <div key={i} className="flex items-center gap-2 w-full min-w-0">
+                <input
+                  type="text"
+                  inputMode={inputMode}
+                  value={v}
+                  onChange={(e) => updateArrayIndex(key, i, e.target.value)}
+                  className="flex-1 min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder={`${placeholder}${i + 1}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeArrayItem(key, i)}
+                  className="px-3 py-2.5 text-sm font-medium text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex-shrink-0"
+                  title="Remover"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   const divider = <div className="my-4 sm:my-6 border-t border-gray-200 dark:border-gray-800" />;
 
@@ -410,11 +517,65 @@ export const PDAForm: React.FC<PDAFormProps> = ({ value, onChange }) => {
           </div>
 
           <div className="my-4" />
-          {renderFiveInputs('Alturas de Queda (Hq) [m]', 'hq', 'Hq')}
-          {renderFiveInputs('Nega (mm)', 'nega', 'Nega', 'numeric')}
-          {renderFiveInputs('EMX', 'emx', 'EMX')}
-          {renderFiveInputs('RMX', 'rmx', 'RMX')}
-          {renderFiveInputs('DMX', 'dmx', 'DMX')}
+
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Golpes</h3>
+              <button
+                type="button"
+                onClick={addGolpe}
+                className="px-3 py-1.5 text-xs sm:text-sm font-medium text-green-600 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+              >
+                + Adicionar golpe
+              </button>
+            </div>
+
+            {golpeCount === 0 ? (
+              <div className="text-sm text-gray-500 dark:text-gray-400 italic py-2">
+                Nenhum golpe cadastrado. Clique em "+ Adicionar golpe" para começar.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {Array.from({ length: golpeCount }).map((_, golpeIdx) => (
+                  <div
+                    key={golpeIdx}
+                    className="border border-gray-200 dark:border-gray-700 rounded-xl p-3 sm:p-4 space-y-3 bg-white dark:bg-gray-950"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                        Golpe {golpeIdx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeGolpe(golpeIdx)}
+                        className="text-xs font-medium text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg px-2.5 py-1 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                      >
+                        Remover
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {golpeFieldConfigs.map(({ key, label, placeholder, inputMode }) => (
+                        <div key={key}>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1.5">
+                            {label}
+                          </label>
+                          <input
+                            type="text"
+                            inputMode={inputMode || 'decimal'}
+                            value={(value[key] && value[key][golpeIdx]) || ''}
+                            onChange={(e) => updateGolpeValue(key, golpeIdx, e.target.value)}
+                            className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                            placeholder={`${placeholder} ${golpeIdx + 1}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {divider}
@@ -422,7 +583,7 @@ export const PDAForm: React.FC<PDAFormProps> = ({ value, onChange }) => {
         {/* Caso for estaca cravada */}
         <div>
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3">Caso for estaca cravada</h3>
-          {renderFiveInputs('Seção cravada (m)', 'secaoCravada', 'Seção ', 'decimal')}
+          {renderDynamicInputs('Seção cravada (m)', 'secaoCravada', 'Seção ', 'decimal')}
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Preencha apenas se aplicável.</p>
         </div>
       </div>

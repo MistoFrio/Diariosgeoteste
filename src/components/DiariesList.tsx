@@ -364,101 +364,149 @@ export const DiariesList: React.FC<DiariesListProps> = ({ onNewDiary }) => {
       }
       setLoadingDetail(true);
       try {
-        // Buscar PCE por diary_id
-        const { data: pce, error: pceErr } = await supabase
-          .from('work_diaries_pce')
-          .select('id, ensaio_tipo, carregamento_tipos, equipamentos_macaco, equipamentos_celula, equipamentos_manometro, equipamentos_relogios, equipamentos_conjunto_vigas, ocorrencias, cravacao_equipamento, cravacao_horimetro, abastecimento_mobilizacao_litros_tanque, abastecimento_mobilizacao_litros_galao, abastecimento_finaldia_litros_tanque, abastecimento_finaldia_litros_galao, abastecimento_chegou_diesel, abastecimento_fornecido_por, abastecimento_quantidade_litros, abastecimento_horario_chegada')
-          .eq('diary_id', selectedDiary.id)
-          .maybeSingle();
-        if (pceErr) throw pceErr;
+        const diaryId = selectedDiary.id;
+        const diaryType = selectedDiary.type;
+
+        // ✅ OTIMIZAÇÃO: Executar todas as queries principais em PARALELO
+        const [
+          pceResult,
+          pitResult,
+          placaResult,
+          fichaResult,
+          pdaDiarioResult
+        ] = await Promise.all([
+          // PCE
+          supabase
+            .from('work_diaries_pce')
+            .select('id, ensaio_tipo, carregamento_tipos, equipamentos_macaco, equipamentos_celula, equipamentos_manometro, equipamentos_relogios, equipamentos_conjunto_vigas, ocorrencias, cravacao_equipamento, cravacao_horimetro, abastecimento_mobilizacao_litros_tanque, abastecimento_mobilizacao_litros_galao, abastecimento_finaldia_litros_tanque, abastecimento_finaldia_litros_galao, abastecimento_chegou_diesel, abastecimento_fornecido_por, abastecimento_quantidade_litros, abastecimento_horario_chegada')
+            .eq('diary_id', diaryId)
+            .maybeSingle(),
+          // PIT
+          supabase
+            .from('work_diaries_pit')
+            .select('id, equipamento, ocorrencias, total_estacas')
+            .eq('diary_id', diaryId)
+            .maybeSingle(),
+          // PLACA (apenas se for tipo PLACA)
+          diaryType === 'PLACA'
+            ? supabase
+                .from('work_diaries_placa')
+                .select('id, equipamentos_macaco, equipamentos_celula_carga, equipamentos_manometro, equipamentos_placa_dimensoes, equipamentos_equipamento_reacao, equipamentos_relogios, ocorrencias')
+                .eq('diary_id', diaryId)
+                .maybeSingle()
+            : Promise.resolve({ data: null, error: null }),
+          // Ficha PDA
+          supabase
+            .from('fichapda')
+            .select('*')
+            .eq('diary_id', diaryId)
+            .maybeSingle(),
+          // Diário PDA
+          supabase
+            .from('work_diaries_pda_diario')
+            .select('id, pda_computadores, ocorrencias, abastec_equipamentos, horimetro_horas, mobilizacao_litros_tanque, mobilizacao_litros_galao, finaldia_litros_tanque, finaldia_litros_galao, entrega_chegou_diesel, entrega_fornecido_por, entrega_quantidade_litros, entrega_horario_chegada')
+            .eq('diary_id', diaryId)
+            .maybeSingle()
+        ]);
+
+        // Verificar erros das queries principais
+        if (pceResult.error) throw pceResult.error;
+        if (pitResult.error) throw pitResult.error;
+        if (placaResult.error) throw placaResult.error;
+        if (fichaResult.error) throw fichaResult.error;
+        if (pdaDiarioResult.error) throw pdaDiarioResult.error;
+
+        // Atualizar estados principais
+        const pce = pceResult.data;
+        const pit = pitResult.data;
+        const placa = placaResult.data;
+        const ficha = fichaResult.data;
+        const pdaDiario = pdaDiarioResult.data;
+
         setPceDetail(pce || null);
+        setPitDetail(pit || null);
+        setPlacaDetail(placa || null);
+        setFichapdaDetail(ficha || null);
+        setPdaDiarioDetail(pdaDiario || null);
+
+        // ✅ OTIMIZAÇÃO: Executar todas as queries de piles em PARALELO
+        const pileQueries = [];
 
         if (pce?.id) {
-          const { data: piles, error: pilesErr } = await supabase
-            .from('work_diaries_pce_piles')
-            .select('id, ordem, estaca_nome, estaca_profundidade_m, estaca_tipo, estaca_carga_trabalho_tf, estaca_diametro_cm')
-            .eq('pce_id', pce.id)
-            .order('ordem', { ascending: true });
-          if (pilesErr) throw pilesErr;
-          setPcePiles(piles || []);
+          pileQueries.push(
+            supabase
+              .from('work_diaries_pce_piles')
+              .select('id, ordem, estaca_nome, estaca_profundidade_m, estaca_tipo, estaca_carga_trabalho_tf, estaca_diametro_cm')
+              .eq('pce_id', pce.id)
+              .order('ordem', { ascending: true })
+              .then(result => ({ type: 'pce', ...result }))
+          );
         } else {
           setPcePiles([]);
         }
 
-        // Buscar PIT por diary_id
-        const { data: pit, error: pitErr } = await supabase
-          .from('work_diaries_pit')
-          .select('id, equipamento, ocorrencias, total_estacas')
-          .eq('diary_id', selectedDiary.id)
-          .maybeSingle();
-        if (pitErr) throw pitErr;
-        setPitDetail(pit || null);
         if (pit?.id) {
-          const { data: pPiles, error: pPilesErr } = await supabase
-            .from('work_diaries_pit_piles')
-            .select('id, ordem, estaca_nome, estaca_tipo, diametro_cm, profundidade_cm, arrasamento_m, comprimento_util_m')
-            .eq('pit_id', pit.id)
-            .order('ordem', { ascending: true });
-          if (pPilesErr) throw pPilesErr;
-          setPitPiles(pPiles || []);
+          pileQueries.push(
+            supabase
+              .from('work_diaries_pit_piles')
+              .select('id, ordem, estaca_nome, estaca_tipo, diametro_cm, profundidade_cm, arrasamento_m, comprimento_util_m')
+              .eq('pit_id', pit.id)
+              .order('ordem', { ascending: true })
+              .then(result => ({ type: 'pit', ...result }))
+          );
         } else {
           setPitPiles([]);
         }
 
-        // Buscar PLACA por diary_id (apenas se for tipo PLACA)
-        if (selectedDiary.type === 'PLACA') {
-          const { data: placa, error: placaErr } = await supabase
-            .from('work_diaries_placa')
-            .select('id, equipamentos_macaco, equipamentos_celula_carga, equipamentos_manometro, equipamentos_placa_dimensoes, equipamentos_equipamento_reacao, equipamentos_relogios, ocorrencias')
-            .eq('diary_id', selectedDiary.id)
-            .maybeSingle();
-          if (placaErr) throw placaErr;
-          setPlacaDetail(placa || null);
-          if (placa?.id) {
-            const { data: placaTestPoints, error: placaTestPointsErr } = await supabase
+        if (placa?.id) {
+          pileQueries.push(
+            supabase
               .from('work_diaries_placa_piles')
               .select('id, ordem, nome, carga_trabalho_1_kgf_cm2, carga_trabalho_2_kgf_cm2')
               .eq('placa_id', placa.id)
-              .order('ordem', { ascending: true });
-            if (placaTestPointsErr) throw placaTestPointsErr;
-            setPlacaPiles(placaTestPoints || []);
-          } else {
-            setPlacaPiles([]);
-          }
+              .order('ordem', { ascending: true })
+              .then(result => ({ type: 'placa', ...result }))
+          );
         } else {
-          setPlacaDetail(null);
           setPlacaPiles([]);
         }
 
-        // Condições climáticas agora fazem parte de work_diaries (weather_*), não é necessário buscar separado.
-
-        // Buscar Ficha técnica de PDA (fichapda) por diary_id
-        const { data: ficha, error: fichaErr } = await supabase
-          .from('fichapda')
-          .select('*')
-          .eq('diary_id', selectedDiary.id)
-          .maybeSingle();
-        if (fichaErr) throw fichaErr;
-        setFichapdaDetail(ficha || null);
-
-        // Buscar Diário PDA (cabeçalho) por diary_id e suas estacas
-        const { data: pdaDiario, error: pdErr } = await supabase
-          .from('work_diaries_pda_diario')
-          .select('id, pda_computadores, ocorrencias, abastec_equipamentos, horimetro_horas, mobilizacao_litros_tanque, mobilizacao_litros_galao, finaldia_litros_tanque, finaldia_litros_galao, entrega_chegou_diesel, entrega_fornecido_por, entrega_quantidade_litros, entrega_horario_chegada')
-          .eq('diary_id', selectedDiary.id)
-          .maybeSingle();
-        if (pdErr) throw pdErr;
-        setPdaDiarioDetail(pdaDiario || null);
         if (pdaDiario?.id) {
-          const { data: pdPiles, error: pdPilesErr } = await supabase
-            .from('work_diaries_pda_diario_piles')
-            .select('id, ordem, nome, tipo, diametro_cm, profundidade_m, carga_trabalho_tf, carga_ensaio_tf')
-            .eq('pda_diario_id', pdaDiario.id)
-            .order('ordem', { ascending: true });
-          if (pdPilesErr) throw pdPilesErr;
-          setPdaDiarioPiles(pdPiles || []);
+          pileQueries.push(
+            supabase
+              .from('work_diaries_pda_diario_piles')
+              .select('id, ordem, nome, tipo, diametro_cm, profundidade_m, carga_trabalho_tf, carga_ensaio_tf')
+              .eq('pda_diario_id', pdaDiario.id)
+              .order('ordem', { ascending: true })
+              .then(result => ({ type: 'pda', ...result }))
+          );
         } else {
           setPdaDiarioPiles([]);
+        }
+
+        // Executar todas as queries de piles em paralelo
+        if (pileQueries.length > 0) {
+          const pileResults = await Promise.all(pileQueries);
+
+          // Processar resultados e atualizar estados
+          for (const result of pileResults) {
+            if (result.error) throw result.error;
+
+            switch (result.type) {
+              case 'pce':
+                setPcePiles(result.data || []);
+                break;
+              case 'pit':
+                setPitPiles(result.data || []);
+                break;
+              case 'placa':
+                setPlacaPiles(result.data || []);
+                break;
+              case 'pda':
+                setPdaDiarioPiles(result.data || []);
+                break;
+            }
+          }
         }
       } catch (e: any) {
         console.error('Erro ao carregar detalhes do diário:', e);

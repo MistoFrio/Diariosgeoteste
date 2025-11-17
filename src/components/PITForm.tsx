@@ -23,7 +23,8 @@ interface PITFormProps {
 
 export const PITForm: React.FC<PITFormProps> = ({ value, onChange }) => {
   const setField = (fn: (draft: PITFormData) => void) => {
-    const next: PITFormData = JSON.parse(JSON.stringify(value));
+    // ✅ OTIMIZAÇÃO: structuredClone() é nativo e muito mais rápido que JSON.parse(JSON.stringify())
+    const next: PITFormData = structuredClone(value);
     fn(next);
     onChange(next);
   };

@@ -41,7 +41,8 @@ interface PDADiaryFormProps {
 
 export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) => {
   const setField = (fn: (draft: PDADiaryFormData) => void) => {
-    const next: PDADiaryFormData = JSON.parse(JSON.stringify(value));
+    // ✅ OTIMIZAÇÃO: structuredClone() é nativo e muito mais rápido que JSON.parse(JSON.stringify())
+    const next: PDADiaryFormData = structuredClone(value);
     fn(next);
     onChange(next);
   };

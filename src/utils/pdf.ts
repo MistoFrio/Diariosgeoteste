@@ -33,11 +33,16 @@ export async function exportElementToPDF(
   } = options;
 
   const canvas = await html2canvas(element, {
-    scale: 3.0, // aumentar escala para melhor nitidez (dpi maior)
+    scale: 2.2, // nitidez alta sem explodir o tamanho do arquivo
     useCORS: true,
     backgroundColor: '#ffffff',
     logging: false,
     letterRendering: true,
+    allowTaint: false,
+    removeContainer: false,
+    // Garantir que capture bordas completas
+    width: element.scrollWidth,
+    height: element.scrollHeight,
     ignoreElements: (el: Element) => {
       try {
         return (el as HTMLElement)?.getAttribute?.('data-pdf-hide') === 'true';
@@ -47,8 +52,8 @@ export async function exportElementToPDF(
     },
   });
 
-  // Usar JPEG qualidade máxima para reduzir artefatos e manter bom tamanho
-  const contentImgData = canvas.toDataURL('image/jpeg', 1.0);
+  // Usar JPEG com compressão leve para segurar tamanho do arquivo
+  const contentImgData = canvas.toDataURL('image/jpeg', 0.92);
 
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
@@ -56,11 +61,20 @@ export async function exportElementToPDF(
   const headerHeight = showHeader ? 18 : 0; // mm
 
   const usableWidth = pageWidth - marginMm * 2;
-  const contentImgWidth = usableWidth;
-  const contentImgHeight = (canvas.height * contentImgWidth) / canvas.width;
-
   const usablePageHeight = pageHeight - marginMm * 2 - headerHeight;
-  const totalPages = Math.max(1, Math.ceil(contentImgHeight / usablePageHeight));
+  const totalPages = 1;
+
+  // Forçar o conteúdo inteiro dentro da página única
+  const widthRatio = usableWidth / canvas.width;
+  const heightRatio = usablePageHeight / canvas.height;
+  const scaleFactor = Math.min(1, widthRatio, heightRatio);
+  const targetWidth = canvas.width * scaleFactor;
+  const targetHeight = canvas.height * scaleFactor;
+
+  // Centralizar se sobrar espaço
+  const offsetX = marginMm + (usableWidth - targetWidth) / 2;
+  const baseY = showHeader ? marginMm + headerHeight : marginMm;
+  const offsetY = baseY + Math.max(0, (usablePageHeight - targetHeight) / 2);
 
   const logoDataUrl = showHeader && logoUrl ? await loadImageAsDataUrl(logoUrl) : undefined;
 
@@ -86,30 +100,12 @@ export async function exportElementToPDF(
     pdf.text(`${pageNumber}/${totalPages}`, pageWidth - marginMm, marginMm + 4, { align: 'right' });
   };
 
-  let heightLeft = contentImgHeight;
-  let positionY = marginMm + headerHeight;
-
-  // First page
   if (showHeader) {
     drawHeader(1);
   } else {
-    // Sem cabeçalho: começar o conteúdo logo após a margem
-    positionY = marginMm;
+    // Sem cabeçalho: nada especial
   }
-  pdf.addImage(contentImgData, 'JPEG', marginMm, positionY, contentImgWidth, contentImgHeight, undefined, 'SLOW');
-  heightLeft -= usablePageHeight;
-
-  let currentPage = 1;
-  while (heightLeft > 0) {
-    pdf.addPage();
-    currentPage += 1;
-    if (showHeader) {
-      drawHeader(currentPage);
-    }
-    positionY = (showHeader ? marginMm + headerHeight : marginMm) - (contentImgHeight - heightLeft);
-    pdf.addImage(contentImgData, 'JPEG', marginMm, positionY, contentImgWidth, contentImgHeight, undefined, 'SLOW');
-    heightLeft -= usablePageHeight;
-  }
+  pdf.addImage(contentImgData, 'JPEG', offsetX, offsetY, targetWidth, targetHeight, undefined, 'FAST');
 
   pdf.save(fileName);
 }

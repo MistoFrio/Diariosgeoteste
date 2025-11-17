@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, FileText, Save, ArrowLeft, Loader2, User, Hammer, Wrench, ClipboardList } from 'lucide-react';
+import { Calendar, Clock, MapPin, FileText, Save, ArrowLeft, Loader2, User, Hammer, Wrench, ClipboardList, Building2 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import { PCEForm, PCEFormData } from './PCEForm';
@@ -106,12 +106,12 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
     cargaTrabalhoTf: '',
     cargaEnsaioTf: '',
     pesoMarteloKg: '',
-    hq: ['', '', '', '', ''],
-    nega: ['', '', '', '', ''],
-    emx: ['', '', '', '', ''],
-    rmx: ['', '', '', '', ''],
-    dmx: ['', '', '', '', ''],
-    secaoCravada: ['', '', '', '', ''],
+    hq: [],
+    nega: [],
+    emx: [],
+    rmx: [],
+    dmx: [],
+    secaoCravada: [],
     alturaBlocoM: '',
     alturaSensoresM: '',
     lpComprimentoUtilM: '',
@@ -147,9 +147,11 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loadingClients, setLoadingClients] = useState(false);
+  const diaryTypeOptions = ['PCE', 'PLACA', 'PIT', 'PDA', 'PDA_DIARIO'] as const;
+  type DiaryType = typeof diaryTypeOptions[number];
   const [activeQuickSheet, setActiveQuickSheet] = useState<
     | null
-    | 'tipo'
+    | 'cliente'
     | 'data'
     | 'entrada'
     | 'saida'
@@ -163,6 +165,8 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
     | 'pda_ficha'
     | 'pda_diario'
   >(null);
+  const [showTypeSelector, setShowTypeSelector] = useState(true);
+  const [hasSelectedType, setHasSelectedType] = useState(false);
 
   // Carregar assinatura do usuário e buscar membros da equipe e clientes
   useEffect(() => {
@@ -635,6 +639,13 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
     }));
   };
 
+  const handleTypeSelect = (opt: DiaryType) => {
+    handleChange('type', opt);
+    setActiveQuickSheet(null);
+    setShowTypeSelector(false);
+    setHasSelectedType(true);
+  };
+
   const scrollToSection = (id: string) => {
     try {
       const el = document.getElementById(id);
@@ -644,7 +655,8 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
     } catch {}
   };
 
-  const isGeneralCompleted = (section: 'data' | 'entrada' | 'saida' | 'equipe' | 'endereco' | 'clima' | 'assinaturas') => {
+  const isGeneralCompleted = (section: 'cliente' | 'data' | 'entrada' | 'saida' | 'equipe' | 'endereco' | 'clima' | 'assinaturas') => {
+    if (section === 'cliente') return Boolean(formData.clientName?.trim());
     if (section === 'data') return Boolean(formData.date);
     if (section === 'entrada') return Boolean(formData.startTime);
     if (section === 'saida') return Boolean(formData.endTime);
@@ -675,7 +687,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
   };
 
   type QuickKey =
-    | 'tipo'
+    | 'cliente'
     | 'data'
     | 'entrada'
     | 'saida'
@@ -732,8 +744,9 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
   };
 
   const quickItemsForType = (): Array<{ key: QuickKey; label: string; icon: React.ReactNode; completed: boolean }> => {
+    if (!hasSelectedType) return [];
     const items: Array<{ key: QuickKey; label: string; icon: React.ReactNode; completed: boolean }> = [
-      { key: 'tipo', label: 'Tipo', icon: <FileText className="w-6 h-6" />, completed: true },
+      { key: 'cliente', label: 'Cliente', icon: <Building2 className="w-6 h-6" />, completed: isGeneralCompleted('cliente') },
       { key: 'data', label: 'Data', icon: <Calendar className="w-6 h-6" />, completed: isGeneralCompleted('data') },
       { key: 'entrada', label: 'Entrada', icon: <Clock className="w-6 h-6" />, completed: isGeneralCompleted('entrada') },
       { key: 'saida', label: 'Saída', icon: <Clock className="w-6 h-6" />, completed: isGeneralCompleted('saida') },
@@ -789,6 +802,53 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
         </div>
       </div>
 
+      {showTypeSelector && (
+        <div className="fixed inset-0 z-50 bg-white dark:bg-gray-950 flex flex-col">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Selecione o tipo de diário</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Escolha o tipo de registro que deseja criar para continuar o preenchimento.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {diaryTypeOptions.map((opt) => {
+                const label = opt === 'PDA' ? 'Ficha PDA' : opt === 'PDA_DIARIO' ? 'PDA' : opt;
+                const active = formData.type === opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => handleTypeSelect(opt)}
+                    className={`rounded-xl border px-4 py-4 text-sm font-semibold transition ${
+                      active
+                        ? 'bg-green-600 border-green-600 text-white'
+                        : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-green-50 dark:hover:bg-green-900/20'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {hasSelectedType && (
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex justify-end bg-white dark:bg-gray-950">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTypeSelector(false);
+                  setActiveQuickSheet(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                Manter tipo atual
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Página móvel por seção */}
       {activeQuickSheet && (
         <div className="fixed inset-0 z-50 md:hidden bg-white dark:bg-gray-900 flex flex-col">
@@ -802,6 +862,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
             </button>
             <h3 className="text-base font-semibold text-gray-900 dark:text-white">
               {activeQuickSheet === 'tipo' && 'Tipo de Diário'}
+              {activeQuickSheet === 'cliente' && 'Cliente'}
               {activeQuickSheet === 'data' && 'Definir Data'}
               {activeQuickSheet === 'entrada' && 'Definir Início'}
               {activeQuickSheet === 'saida' && 'Definir Término'}
@@ -819,25 +880,57 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {activeQuickSheet === 'tipo' && (
+            {activeQuickSheet === 'cliente' && (
               <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Selecione o tipo</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['PCE','PLACA','PIT','PDA','PDA_DIARIO'] as const).map((opt) => {
-                    const label = opt === 'PDA' ? 'Ficha PDA' : opt === 'PDA_DIARIO' ? 'PDA' : opt;
-                    const active = formData.type === opt;
-                    return (
-                      <button
-                        key={opt}
-                        type="button"
-                        onClick={() => handleChange('type', opt)}
-                        className={`${active ? 'bg-green-600 text-white border-green-600' : 'bg-white dark:bg-gray-950 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700'} px-3 py-3 rounded-xl font-medium`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Cliente *
+                  </label>
+                  {isSupabaseConfigured && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setLoadingClients(true);
+                        try {
+                          const { data: clientsData, error: clientsError } = await supabase
+                            .from('clients')
+                            .select('*')
+                            .order('name');
+                          if (!clientsError && clientsData) {
+                            setClients(clientsData);
+                          }
+                        } finally {
+                          setLoadingClients(false);
+                        }
+                      }}
+                      className="text-xs text-green-700 dark:text-green-300 hover:underline disabled:opacity-50"
+                      disabled={loadingClients}
+                    >
+                      {loadingClients ? 'Atualizando...' : 'Atualizar'}
+                    </button>
+                  )}
                 </div>
+                {loadingClients ? (
+                  <div className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 flex items-center">
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Carregando clientes...
+                  </div>
+                ) : (
+                  <>
+                    <ClientSelector
+                      clients={clients}
+                      value={formData.clientName}
+                      onChange={(value) => handleChange('clientName', value)}
+                      loading={loadingClients}
+                      required
+                    />
+                    {clients.length === 0 && (
+                      <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">
+                        Nenhum cliente cadastrado. {user?.role === 'admin' && 'Cadastre clientes na seção "Clientes".'}
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
             )}
 
@@ -1069,44 +1162,39 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
           </div>
         </div>
       )}
-      {/* Fluxo com ícones (mobile) */}
-      <div className="md:hidden space-y-4 mb-4">
-        <div>
-          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Tipo de Diário</p>
-          <div className="grid grid-cols-2 gap-2">
-            {(['PCE','PLACA','PIT','PDA','PDA_DIARIO'] as const).map((opt) => {
-              const label = opt === 'PDA' ? 'Ficha PDA' : opt === 'PDA_DIARIO' ? 'PDA' : opt;
-              const active = formData.type === opt;
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => handleChange('type', opt)}
-                  className={`${active ? 'bg-green-600 text-white border-green-600' : 'bg-white dark:bg-gray-950 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700'} px-3 py-3 rounded-xl font-medium`}
-                >
-                  {label}
-                </button>
-              );
-            })}
+      {hasSelectedType && !showTypeSelector && (
+        <div className="md:hidden space-y-4 mb-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Fluxo do diário</p>
+            <button
+              type="button"
+              onClick={() => {
+                setShowTypeSelector(true);
+                setActiveQuickSheet(null);
+              }}
+              className="text-xs font-medium text-green-700 dark:text-green-300 underline"
+            >
+              Alterar tipo
+            </button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            {quickItemsForType().map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setActiveQuickSheet(item.key)}
+                className={`flex flex-col items-center justify-center rounded-xl border p-3 active:scale-95 transition ${
+                  item.completed ? 'bg-green-700 border-green-700 text-white' : 'bg-white dark:bg-gray-950 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200'
+                }`}
+              >
+                <span className="mb-1 text-green-600">{item.icon}</span>
+                <span className="text-xs font-medium text-center">{item.label}</span>
+              </button>
+            ))}
           </div>
         </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          {quickItemsForType().map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setActiveQuickSheet(item.key)}
-              className={`flex flex-col items-center justify-center rounded-xl border p-3 active:scale-95 transition ${
-                item.completed ? 'bg-green-700 border-green-700 text-white' : 'bg-white dark:bg-gray-950 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200'
-              }`}
-            >
-              <span className="mb-1 text-green-600">{item.icon}</span>
-              <span className="text-xs font-medium text-center">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Mensagens de erro e sucesso */}
       {error && (
@@ -1122,8 +1210,23 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
-        <div className="hidden md:block space-y-6 sm:space-y-8">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+        {hasSelectedType && (
+          <>
+            <div className="hidden md:block space-y-6 sm:space-y-8">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Fluxo do diário</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTypeSelector(true);
+                    setActiveQuickSheet(null);
+                  }}
+                  className="text-xs font-medium text-green-700 dark:text-green-300 underline"
+                >
+                  Alterar tipo
+                </button>
+              </div>
+              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
           <div className="p-4 sm:p-5 md:p-6 border-b border-gray-100 dark:border-gray-800 bg-green-50 dark:bg-green-900/20">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white flex items-center">
               <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-600" />
@@ -1376,7 +1479,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" id="sec-data-horarios">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6" id="sec-data-horarios">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                   Data *
@@ -1393,35 +1496,37 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
                 </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                  Início *
-                </label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="time"
-                    value={formData.startTime}
-                    onChange={(e) => handleChange('startTime', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    required
-                  />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Início *
+                  </label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="time"
+                      value={formData.startTime}
+                      onChange={(e) => handleChange('startTime', e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                  Término *
-                </label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="time"
-                    value={formData.endTime}
-                    onChange={(e) => handleChange('endTime', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    required
-                  />
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Término *
+                  </label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="time"
+                      value={formData.endTime}
+                      onChange={(e) => handleChange('endTime', e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1543,6 +1648,9 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
         </div>
 
         </div> {/* end desktop block */}
+
+          </>
+        )}
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end space-y-3 sm:space-y-0 sm:space-x-3 md:space-x-4 py-4 sm:py-5 md:py-6">
           <button

@@ -26,7 +26,8 @@ interface PLACAFormProps {
 
 export const PLACAForm: React.FC<PLACAFormProps> = ({ value, onChange }) => {
   const setField = (fn: (draft: PLACAFormData) => void) => {
-    const next: PLACAFormData = JSON.parse(JSON.stringify(value));
+    // ✅ OTIMIZAÇÃO: structuredClone() é nativo e muito mais rápido que JSON.parse(JSON.stringify())
+    const next: PLACAFormData = structuredClone(value);
     fn(next);
     onChange(next);
   };

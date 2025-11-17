@@ -47,7 +47,8 @@ interface PCEFormProps {
 
 export const PCEForm: React.FC<PCEFormProps> = ({ value, onChange }) => {
   const setField = (path: (draft: PCEFormData) => void) => {
-    const next: PCEFormData = JSON.parse(JSON.stringify(value));
+    // ✅ OTIMIZAÇÃO: structuredClone() é nativo e muito mais rápido que JSON.parse(JSON.stringify())
+    const next: PCEFormData = structuredClone(value);
     path(next);
     onChange(next);
   };

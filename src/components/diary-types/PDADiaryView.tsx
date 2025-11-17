@@ -1,4 +1,5 @@
 import React from 'react';
+import { PdfLayout, PdfRow, PdfSection, PdfTable, PdfValue } from './PdfLayout';
 
 interface PDADiaryViewProps {
   diary: any;
@@ -7,326 +8,127 @@ interface PDADiaryViewProps {
   pdaDiarioPiles: any[];
 }
 
+const formatDate = (value?: string) => (value ? new Date(value).toLocaleDateString('pt-BR') : '');
+
+const joinOrDash = (input?: string | string[]) => {
+  if (!input) return '-';
+  if (Array.isArray(input)) {
+    const filtered = input.filter(Boolean);
+    return filtered.length ? filtered.join(', ') : '-';
+  }
+  return input;
+};
+
 export const PDADiaryView: React.FC<PDADiaryViewProps> = ({ 
   diary, 
-  fichapdaDetail, 
-  pdaDiarioDetail, 
-  pdaDiarioPiles 
+  fichapdaDetail,
+  pdaDiarioDetail,
+  pdaDiarioPiles = [],
 }) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
-
-  const formatTime = (time: string) => {
-    return time;
-  };
-
+  const ficha = fichapdaDetail || {};
+  const pdaDiario = pdaDiarioDetail || {};
   return (
-    <div className="w-full space-y-3">
-      {/* Cabeçalho Principal */}
-      <div className="border border-gray-300 rounded-lg overflow-hidden">
-        <div className="bg-gray-100 px-3 py-3 border-b border-gray-300">
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center space-x-3">
-              <img src="/logogeoteste.png" alt="Geoteste" className="h-8 w-8 flex-shrink-0" />
-              <div>
-                <h1 className="text-lg font-bold uppercase text-gray-900 tracking-wide">DIÁRIO DE OBRA</h1>
-              </div>
+    <PdfLayout diary={diary} title="DIÁRIO DE OBRA • PDA">
+      <PdfSection columns={4} title="Identificação">
+        <PdfRow label="Cliente" value={diary.clientName} span={2} />
+        <PdfRow label="Data" value={formatDate(diary.date)} />
+        <PdfRow label="Equipamento" value={fichapdaDetail?.equipamento || diary.equipment || '-'} />
+        <PdfRow label="Endereço" value={diary.address} span={2} />
+        <PdfRow label="Nº da obra" value={diary.workNumber || '-'} />
+        <PdfRow label="Horário início" value={diary.startTime || '-'} span={1} />
+        <PdfRow label="Horário término" value={diary.endTime || '-'} span={1} />
+        <PdfRow label="Equipe" value={diary.team} span={4} />
+      </PdfSection>
+
+      <PdfSection columns={3} title="Clima">
+        <PdfRow label="Ensolarado" value={<PdfValue checked={!!diary?.weather_ensolarado} />} />
+        <PdfRow label="Chuva fraca" value={<PdfValue checked={!!diary?.weather_chuva_fraca} />} />
+        <PdfRow label="Chuva forte" value={<PdfValue checked={!!diary?.weather_chuva_forte} />} />
+      </PdfSection>
+
+      <PdfSection columns={4} title="Ficha técnica PDA">
+        <PdfRow label="Computador" value={joinOrDash(fichapdaDetail?.computador)} />
+        <PdfRow label="Estaca" value={fichapdaDetail?.estaca_nome || '-'} />
+        <PdfRow label="Tipo" value={fichapdaDetail?.estaca_tipo || '-'} />
+        <PdfRow label="Ø (cm)" value={fichapdaDetail?.diametro_cm ?? '-'} />
+        <PdfRow label="Bloco" value={fichapdaDetail?.bloco_nome || '-'} />
+        <PdfRow label="Carga trabalho (tf)" value={fichapdaDetail?.carga_trabalho_tf ?? '-'} />
+        <PdfRow label="Carga ensaio (tf)" value={fichapdaDetail?.carga_ensaio_tf ?? '-'} />
+        <PdfRow label="Peso martelo (kg)" value={fichapdaDetail?.peso_martelo_kg ?? '-'} />
+        <PdfRow label="LP (m)" value={fichapdaDetail?.lp_m ?? '-'} />
+        <PdfRow label="LE (m)" value={fichapdaDetail?.le_m ?? '-'} />
+        <PdfRow label="LT (m)" value={fichapdaDetail?.lt_m ?? '-'} />
+        <PdfRow label="Sensores (m)" value={fichapdaDetail?.altura_sensores_m ?? '-'} />
+        <PdfRow label="Hq" value={joinOrDash(fichapdaDetail?.hq)} span={2} />
+        <PdfRow label="Nega" value={joinOrDash(fichapdaDetail?.nega)} span={2} />
+      </PdfSection>
+
+      <PdfSection columns={3} title="Operação PDA">
+        <PdfRow label="Computadores" value={joinOrDash(pdaDiarioDetail?.pda_computadores)} span={2} />
+        <PdfRow label="Horímetro" value={pdaDiarioDetail?.horimetro_horas ?? '-'} />
+        <PdfRow label="Equipamentos abastecidos" value={joinOrDash(pdaDiarioDetail?.abastec_equipamentos)} span={3} />
+        <PdfRow label="Ocorrências" value={pdaDiarioDetail?.ocorrencias || diary.observations || '-'} span={3} />
+      </PdfSection>
+
+      <PdfSection columns={4} title="Abastecimento">
+        <PdfRow label="Mobilização tanque (L)" value={pdaDiarioDetail?.mobilizacao_litros_tanque ?? '-'} />
+        <PdfRow label="Mobilização galão (L)" value={pdaDiarioDetail?.mobilizacao_litros_galao ?? '-'} />
+        <PdfRow label="Final do dia tanque (L)" value={pdaDiarioDetail?.finaldia_litros_tanque ?? '-'} />
+        <PdfRow label="Final do dia galão (L)" value={pdaDiarioDetail?.finaldia_litros_galao ?? '-'} />
+        <PdfRow
+          label="Chegou diesel?"
+          value={
+            <div className="flex gap-4">
+              <PdfValue label="Sim" checked={pdaDiarioDetail?.entrega_chegou_diesel === true} />
+              <PdfValue label="Não" checked={pdaDiarioDetail?.entrega_chegou_diesel === false} />
             </div>
-          </div>
+          }
+          span={2}
+        />
+        <PdfRow label="Fornecido por" value={pdaDiarioDetail?.entrega_fornecido_por || '-'} />
+        <PdfRow label="Quantidade (L)" value={pdaDiarioDetail?.entrega_quantidade_litros ?? '-'} />
+        <PdfRow label="Horário chegada" value={pdaDiarioDetail?.entrega_horario_chegada || '-'} />
+      </PdfSection>
+
+      <section className="border border-gray-400">
+        <div className="bg-gray-200 border-b border-gray-400 px-1.5 xs:px-2 sm:px-3 py-1 xs:py-1.5 sm:py-2 font-bold uppercase text-[9px] xs:text-[10px] sm:text-[11px]">
+          Estacas ensaiadas
         </div>
-
-        {/* Informações Principais - Layout Mobile */}
-        <div className="p-3 space-y-3">
-          {/* Cliente */}
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="text-sm font-semibold text-gray-700 mb-1">Cliente:</div>
-            <div className="text-sm text-gray-900 break-words">{diary.clientName}</div>
-          </div>
-
-          {/* Endereço */}
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="text-sm font-semibold text-gray-700 mb-1">Endereço:</div>
-            <div className="text-sm text-gray-900 break-words">{diary.address}</div>
-          </div>
-
-          {/* Data e Horários */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <div className="text-sm font-semibold text-gray-700 mb-1">Data:</div>
-              <div className="text-sm text-gray-900">{formatDate(diary.date)}</div>
-            </div>
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <div className="text-sm font-semibold text-gray-700 mb-1">Início:</div>
-              <div className="text-sm text-gray-900">{formatTime(diary.startTime)}</div>
-            </div>
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <div className="text-sm font-semibold text-gray-700 mb-1">Término:</div>
-              <div className="text-sm text-gray-900">{formatTime(diary.endTime)}</div>
-            </div>
-          </div>
-
-          {/* Equipe */}
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="text-sm font-semibold text-gray-700 mb-1">Equipe:</div>
-            <div className="text-sm text-gray-900 break-words">{diary.team}</div>
-          </div>
-
-          {/* Condições Climáticas */}
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="text-sm font-semibold text-gray-700 mb-2">Condições Climáticas:</div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
-              <div className="flex items-center space-x-2">
-                <span>Ensolarado:</span>
-                <span className="border-b border-gray-400 w-8"></span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>Chuva fraca:</span>
-                <span className="border-b border-gray-400 w-8"></span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>Chuva forte:</span>
-                <span className="border-b border-gray-400 w-8"></span>
-              </div>
-            </div>
-          </div>
+        <div className="p-1.5 xs:p-2 sm:p-3">
+          <PdfTable
+            headers={['Estaca', 'Tipo', 'Ø (cm)', 'Profundidade (m)', 'Carga trabalho (tf)', 'Carga ensaio (tf)']}
+            rows={pdaDiarioPiles.map((pile) => [
+              pile.nome || '-',
+              pile.tipo || '-',
+              pile.diametro_cm || '-',
+              pile.profundidade_m || '-',
+              pile.carga_trabalho_tf || '-',
+              pile.carga_ensaio_tf || '-',
+            ])}
+          />
         </div>
-      </div>
+      </section>
 
-      
-
-      {/* Ficha Técnica PDA */}
-      {fichapdaDetail && (
-        <div className="border border-gray-300 rounded-lg overflow-hidden">
-          <div className="bg-gray-100 px-3 py-2 border-b border-gray-300">
-            <h3 className="font-bold text-sm uppercase text-gray-900">FICHA TÉCNICA • PDA</h3>
-          </div>
-          <div className="p-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">PDA:</div>
-                <div className="text-sm text-gray-900 break-words">
-                  {(fichapdaDetail.computador || []).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Equipamento:</div>
-                <div className="text-sm text-gray-900 break-words">
-                  {(fichapdaDetail.equipamento || []).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Bloco:</div>
-                <div className="text-sm text-gray-900 break-words">{fichapdaDetail.bloco_nome || '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Estaca:</div>
-                <div className="text-sm text-gray-900 break-words">{fichapdaDetail.estaca_nome || '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Tipo:</div>
-                <div className="text-sm text-gray-900 break-words">{fichapdaDetail.estaca_tipo || '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Ø (cm):</div>
-                <div className="text-sm text-gray-900">{fichapdaDetail.diametro_cm ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Carga Trab. (tf):</div>
-                <div className="text-sm text-gray-900">{fichapdaDetail.carga_trabalho_tf ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Carga Ensaio (tf):</div>
-                <div className="text-sm text-gray-900">{fichapdaDetail.carga_ensaio_tf ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg sm:col-span-2">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Peso martelo (kg):</div>
-                <div className="text-sm text-gray-900">{fichapdaDetail.peso_martelo_kg ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg sm:col-span-2">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Hq (m):</div>
-                <div className="text-sm text-gray-900 break-words">
-                  {(fichapdaDetail.hq || []).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg sm:col-span-2">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Nega (mm):</div>
-                <div className="text-sm text-gray-900 break-words">
-                  {(fichapdaDetail.nega || []).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg sm:col-span-2">
-                <div className="text-sm font-semibold text-gray-700 mb-1">EMX:</div>
-                <div className="text-sm text-gray-900 break-words">
-                  {(fichapdaDetail.emx || []).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg sm:col-span-2">
-                <div className="text-sm font-semibold text-gray-700 mb-1">RMX:</div>
-                <div className="text-sm text-gray-900 break-words">
-                  {(fichapdaDetail.rmx || []).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg sm:col-span-2">
-                <div className="text-sm font-semibold text-gray-700 mb-1">DMX:</div>
-                <div className="text-sm text-gray-900 break-words">
-                  {(fichapdaDetail.dmx || []).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg sm:col-span-2">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Seção cravada (m):</div>
-                <div className="text-sm text-gray-900 break-words">
-                  {(fichapdaDetail.secao_cravada || []).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Altura bloco (m):</div>
-                <div className="text-sm text-gray-900">{fichapdaDetail.altura_bloco_m ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Altura sensores (m):</div>
-                <div className="text-sm text-gray-900">{fichapdaDetail.altura_sensores_m ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">LP (m):</div>
-                <div className="text-sm text-gray-900">{fichapdaDetail.lp_m ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">LE (m):</div>
-                <div className="text-sm text-gray-900">{fichapdaDetail.le_m ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">LT (m):</div>
-                <div className="text-sm text-gray-900">{fichapdaDetail.lt_m ?? '-'}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Diário PDA */}
-      {pdaDiarioDetail && (
-        <div className="border border-gray-300 rounded-lg overflow-hidden">
-          <div className="bg-gray-100 px-3 py-2 border-b border-gray-300">
-            <h3 className="font-bold text-sm uppercase text-gray-900">DIÁRIO • PDA</h3>
-          </div>
-          <div className="p-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-gray-50 p-3 rounded-lg sm:col-span-2">
-                <div className="text-sm font-semibold text-gray-700 mb-1">PDA:</div>
-                <div className="text-sm text-gray-900 break-words">
-                  {(pdaDiarioDetail.pda_computadores || []).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg sm:col-span-2">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Ocorrências:</div>
-                <div className="text-sm text-gray-900 break-words">{pdaDiarioDetail.ocorrencias || '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Equipamentos:</div>
-                <div className="text-sm text-gray-900 break-words">
-                  {(pdaDiarioDetail.abastec_equipamentos || []).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Horímetro (h):</div>
-                <div className="text-sm text-gray-900">{pdaDiarioDetail.horimetro_horas ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Mobilização tanque (L):</div>
-                <div className="text-sm text-gray-900">{pdaDiarioDetail.mobilizacao_litros_tanque ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Mobilização galão (L):</div>
-                <div className="text-sm text-gray-900">{pdaDiarioDetail.mobilizacao_litros_galao ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Final do dia tanque (L):</div>
-                <div className="text-sm text-gray-900">{pdaDiarioDetail.finaldia_litros_tanque ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Final do dia galão (L):</div>
-                <div className="text-sm text-gray-900">{pdaDiarioDetail.finaldia_litros_galao ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Chegou diesel?</div>
-                <div className="text-sm text-gray-900">
-                  {pdaDiarioDetail.entrega_chegou_diesel === null ? '-' : (pdaDiarioDetail.entrega_chegou_diesel ? 'Sim' : 'Não')}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Fornecido por:</div>
-                <div className="text-sm text-gray-900 break-words">{pdaDiarioDetail.entrega_fornecido_por || '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Qtd diesel (L):</div>
-                <div className="text-sm text-gray-900">{pdaDiarioDetail.entrega_quantidade_litros ?? '-'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-semibold text-gray-700 mb-1">Horário chegada:</div>
-                <div className="text-sm text-gray-900">{pdaDiarioDetail.entrega_horario_chegada || '-'}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Estacas do Dia PDA */}
-          {pdaDiarioPiles && pdaDiarioPiles.length > 0 && (
-            <div className="border-t border-gray-300">
-              <div className="bg-gray-100 px-3 py-2 border-b border-gray-300">
-                <h3 className="font-bold text-sm uppercase text-gray-900">DIÁRIO • PDA • ESTACAS DO DIA</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <div className="min-w-full">
-                  <div className="grid grid-cols-6 gap-2 p-3 bg-gray-50 text-xs font-semibold text-gray-700">
-                    <div>Nome</div>
-                    <div>Tipo</div>
-                    <div>Ø (cm)</div>
-                    <div>Prof. (m)</div>
-                    <div>Carga Trab. (tf)</div>
-                    <div>Carga Ensaio (tf)</div>
-                  </div>
-                  {pdaDiarioPiles.map((row: any, i: number) => (
-                    <div key={row.id || i} className="grid grid-cols-6 gap-2 p-3 border-t border-gray-200 text-xs text-gray-900">
-                      <div className="break-words">{row.nome || '-'}</div>
-                      <div className="break-words">{row.tipo || '-'}</div>
-                      <div>{row.diametro_cm ?? '-'}</div>
-                      <div>{row.profundidade_m ?? '-'}</div>
-                      <div>{row.carga_trabalho_tf ?? '-'}</div>
-                      <div>{row.carga_ensaio_tf ?? '-'}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Assinaturas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="border border-gray-300 rounded-lg p-3">
-          <h3 className="font-bold text-xs uppercase text-gray-900 mb-2">ASSINATURA GEOTESTE</h3>
-          <div className="text-xs text-gray-700 mb-2">
-            <span className="font-semibold">Responsável:</span> {diary.geotestSignature}
-          </div>
+      <PdfSection title="Assinaturas" columns={2}>
+        <PdfRow
+          label="Geoteste"
+          value={
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px]">{diary.geotestSignature || '-'}</span>
           {diary.geotestSignatureImage && (
-            <div className="border border-gray-300 p-2 bg-white rounded">
+                <div className="h-16 flex items-center justify-center border border-gray-300 bg-white">
               <img
                 src={diary.geotestSignatureImage}
                 alt="Assinatura digital"
-              className="h-12 w-auto max-w-full object-contain mx-auto block"
+                    className="max-h-14 object-contain"
               />
             </div>
           )}
         </div>
-        
-        <div className="border border-gray-300 rounded-lg p-3">
-          <h3 className="font-bold text-xs uppercase text-gray-900 mb-2">ASSINATURA RESPONSÁVEL DA OBRA</h3>
-          <div className="text-xs text-gray-900 break-words">
-            {diary.responsibleSignature}
-          </div>
-        </div>
-      </div>
-    </div>
+          }
+        />
+        <PdfRow label="Responsável da obra" value={diary.responsibleSignature || '-'} />
+      </PdfSection>
+    </PdfLayout>
   );
 };
