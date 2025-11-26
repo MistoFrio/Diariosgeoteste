@@ -39,7 +39,6 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
     endTime: '',
     servicesExecuted: '',
     geotestSignatureImage: '',
-    responsibleSignature: '',
     observations: ''
   });
 
@@ -192,9 +191,9 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
           .single();
 
         if (!userError && userProfile) {
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
-            geotestSignatureImage: userProfile.signature_image_url || ''
+            geotestSignatureImage: userProfile.signature_image_url || '',
           }));
         }
 
@@ -311,9 +310,9 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
         start_time: formData.startTime,
         end_time: formData.endTime,
         services_executed: formData.servicesExecuted.trim(),
-        geotest_signature: user?.name || 'Responsável Geoteste', // Usar nome do usuário como assinatura em texto
+        geotest_signature: user.name || null,
         geotest_signature_url: formData.geotestSignatureImage || null,
-        responsible_signature: formData.responsibleSignature.trim(),
+        responsible_signature: null,
         observations: formData.observations.trim() || null,
       };
 
@@ -670,7 +669,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
       );
     }
     if (section === 'clima') return weather.ensolarado || weather.chuvaFraca || weather.chuvaForte;
-    if (section === 'assinaturas') return Boolean(formData.responsibleSignature?.trim());
+    if (section === 'assinaturas') return true;
     return false;
   };
 
@@ -1102,17 +1101,9 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
 
             {activeQuickSheet === 'assinaturas' && (
               <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                    Assinatura Responsável da Obra *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.responsibleSignature}
-                    onChange={(e) => handleChange('responsibleSignature', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Nome do responsável"
-                  />
+                <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-4 text-sm text-gray-600 dark:text-gray-300">
+                  As assinaturas serão preenchidas diretamente no GOV.
+                  O PDF gerado trará apenas os espaços em branco para a Geoteste e o cliente assinarem posteriormente.
                 </div>
               </div>
             )}
@@ -1569,64 +1560,15 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
           </div>
           
           <div className="p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                  Assinatura Geoteste *
-                </label>
-                <div className="space-y-2">
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                      Responsável: <span className="font-medium text-gray-900 dark:text-white">{user?.name || 'Usuário'}</span>
-                    </p>
-                    {formData.geotestSignatureImage ? (
-                      <div className="mt-2">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Sua assinatura digital será incluída:</p>
-                        <div className="w-full h-40 bg-white border border-gray-300 dark:border-gray-600 rounded flex items-center justify-center">
-                          <img
-                            src={formData.geotestSignatureImage}
-                            alt="Assinatura digital"
-                            className="h-full w-auto max-w-full object-contain p-2"
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                        <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                          ⚠️ Você ainda não possui uma assinatura digital. 
-                          <a 
-                            href="#" 
-                            onClick={(e) => { e.preventDefault(); window.location.href = '#profile'; }}
-                            className="text-yellow-800 dark:text-yellow-200 underline ml-1"
-                          >
-                            Configure sua assinatura no perfil
-                          </a>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  {formData.geotestSignatureImage && (
-                    <p className="text-xs text-green-600 dark:text-green-400 flex items-center">
-                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                      Assinatura digital carregada automaticamente do seu perfil
-                    </p>
-                  )}
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                  Assinatura Responsável da Obra *
-                </label>
-                <input
-                  type="text"
-                  value={formData.responsibleSignature}
-                  onChange={(e) => handleChange('responsibleSignature', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Nome do responsável pela obra"
-                  required
-                />
-              </div>
+            <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-4 sm:p-5 text-sm text-gray-600 dark:text-gray-300">
+              <p className="font-semibold text-gray-800 dark:text-gray-100 mb-2">Assinaturas coletadas externamente</p>
+              <p>
+                Este diário será assinado no portal GOV.BR. O PDF exportado incluirá apenas os espaços em branco
+                tanto para a Geoteste quanto para o cliente assinarem manualmente após o download.
+              </p>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                Nenhuma assinatura é armazenada ou preenchida automaticamente neste formulário.
+              </p>
             </div>
 
             {/* Observações - Não exibir para Ficha técnica de PDA */}

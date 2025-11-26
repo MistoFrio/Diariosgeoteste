@@ -15,6 +15,19 @@ export interface Client {
   createdAt: string;
 }
 
+export interface EquipmentLocation {
+  id: string;
+  name: string;
+  description?: string | null;
+  address: string;
+  latitude: number;
+  longitude: number;
+  clientId?: string | null;
+  clientName?: string | null;
+  status: string;
+  createdAt: string;
+}
+
 export interface WorkDiary {
   id: string;
   clientId: string;

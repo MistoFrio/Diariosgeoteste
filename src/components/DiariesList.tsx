@@ -320,7 +320,7 @@ export const DiariesList: React.FC<DiariesListProps> = ({ onNewDiary }) => {
             endTime: r.end_time,
             servicesExecuted: r.services_executed,
             geotestSignature: r.geotest_signature,
-            geotestSignatureImage: profile?.signature_image_url || '',
+            geotestSignatureImage: r.geotest_signature_url || profile?.signature_image_url || '',
             responsibleSignature: r.responsible_signature,
             observations: r.observations || '',
             createdBy: profile?.name || user.name || '',

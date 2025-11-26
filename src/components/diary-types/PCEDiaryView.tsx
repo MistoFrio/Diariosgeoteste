@@ -80,7 +80,7 @@ export const PCEDiaryView: React.FC<PCEDiaryViewProps> = ({ diary, pceDetail = {
                 <div className="h-16 flex items-center justify-center border border-gray-300 bg-white">
                   <img
                     src={diary.geotestSignatureImage}
-                    alt="Assinatura digital"
+                    alt="Assinatura Geoteste"
                     className="max-h-14 object-contain"
                   />
                 </div>
@@ -88,7 +88,7 @@ export const PCEDiaryView: React.FC<PCEDiaryViewProps> = ({ diary, pceDetail = {
             </div>
           }
         />
-        <PdfRow label="Responsável da obra" value={diary.responsibleSignature || '-'} />
+        <PdfRow label="Cliente" placeholder />
       </PdfSection>
     </PdfLayout>
   );

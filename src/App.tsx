@@ -13,6 +13,7 @@ import { AgentAssistant } from './components/AgentAssistant';
 import { SplashScreen } from './components/SplashScreen';
 import { InstallPWA } from './components/InstallPWA';
 import { useIsPWA } from './hooks/useIsPWA';
+import { EquipmentMap } from './components/EquipmentMap';
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -67,6 +68,8 @@ const AppContent: React.FC = () => {
         return user.role === 'admin' ? <ClientsManagement /> : <Dashboard onPageChange={setCurrentPage} />;
       case 'users':
         return user.role === 'admin' ? <UsersManagement /> : <Dashboard onPageChange={setCurrentPage} />;
+      case 'equipment':
+        return user.role === 'admin' ? <EquipmentMap /> : <Dashboard onPageChange={setCurrentPage} />;
       case 'profile':
         return <ProfilePage />;
       default:

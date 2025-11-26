@@ -115,19 +115,19 @@ export const PDADiaryView: React.FC<PDADiaryViewProps> = ({
           value={
             <div className="flex flex-col gap-2">
               <span className="text-[11px]">{diary.geotestSignature || '-'}</span>
-          {diary.geotestSignatureImage && (
+              {diary.geotestSignatureImage && (
                 <div className="h-16 flex items-center justify-center border border-gray-300 bg-white">
-              <img
-                src={diary.geotestSignatureImage}
-                alt="Assinatura digital"
+                  <img
+                    src={diary.geotestSignatureImage}
+                    alt="Assinatura Geoteste"
                     className="max-h-14 object-contain"
-              />
+                  />
+                </div>
+              )}
             </div>
-          )}
-        </div>
           }
         />
-        <PdfRow label="Responsável da obra" value={diary.responsibleSignature || '-'} />
+        <PdfRow label="Cliente" placeholder />
       </PdfSection>
     </PdfLayout>
   );

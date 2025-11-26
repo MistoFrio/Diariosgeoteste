@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { LogOut, FileText, Users, Building2, Home, Sun, Moon, User, Menu, X, ChevronLeft } from 'lucide-react';
+import { LogOut, FileText, Users, Building2, Home, Sun, Moon, User, Menu, X, ChevronLeft, Map } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { BottomNav } from './BottomNav';
 
@@ -38,6 +38,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
 
   const adminMenuItems = [
     ...baseMenuItems,
+    { key: 'equipment', label: 'Equipamentos', icon: Map },
     { key: 'clients', label: 'Clientes', icon: Building2 },
     { key: 'users', label: 'Usuários', icon: Users },
   ];

@@ -32,33 +32,43 @@ interface PdfTableProps {
 
 export const PdfLayout: React.FC<PdfLayoutProps> = ({ diary, title, children }) => {
   return (
-    <div className="w-full max-w-[790px] min-h-[1100px] bg-white text-gray-900 pt-3 xs:pt-4 sm:pt-5 md:pt-6 px-2 xs:px-3 sm:px-4 md:px-6 pb-2 xs:pb-3 sm:pb-4 md:pb-6 space-y-2 xs:space-y-3 sm:space-y-4 mx-auto overflow-x-hidden box-border">
-      <header className="flex flex-col border-b-2 border-gray-400 pt-2 xs:pt-3 pb-2 xs:pb-3 gap-1.5 xs:gap-2 w-full relative z-10">
-        <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 w-full min-w-0">
-          <img src="/logogeoteste.png" alt="Geoteste" className="h-6 xs:h-7 sm:h-8 md:h-10 flex-shrink-0" />
-          <div className="flex-1 min-w-0 relative z-10">
-            <h1 className="text-xs xs:text-sm sm:text-base md:text-xl font-bold uppercase tracking-wide leading-tight break-words">{title}</h1>
-            <p className="text-[10px] xs:text-xs sm:text-sm font-semibold mt-0.5 break-words">Cliente: {diary.clientName || '-'}</p>
-          </div>
-        </div>
-        <div className="text-left text-[10px] xs:text-xs sm:text-sm font-semibold leading-tight space-y-0.5 w-full">
-          <div className="break-words">Data: {diary.date ? new Date(diary.date).toLocaleDateString('pt-BR') : '-'}</div>
-          <div className="break-words">Responsável: {diary.geotestSignature || '-'}</div>
-        </div>
-      </header>
+    <div className="w-full py-4 xs:py-6 sm:py-8">
+      <div className="max-w-[900px] mx-auto px-2 xs:px-4">
+        <div className="mx-auto w-full max-w-[794px] min-h-[1123px] bg-white text-gray-900 shadow-[0_8px_24px_rgba(15,23,42,0.08)] border border-gray-200 rounded-md pt-5 xs:pt-6 sm:pt-8 px-4 xs:px-6 sm:px-8 pb-5 xs:pb-6 sm:pb-8 flex flex-col gap-4 box-border">
+          <header className="flex flex-col border-b border-gray-300 pb-3 xs:pb-4 gap-2 w-full">
+            <div className="flex items-center gap-2 xs:gap-3 sm:gap-4 w-full min-w-0">
+              <img src="/logogeoteste.png" alt="Geoteste" className="h-7 xs:h-8 sm:h-9 md:h-10 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h1 className="text-sm xs:text-base sm:text-lg md:text-xl font-serif font-semibold tracking-wide leading-tight break-words">
+                  {title}
+                </h1>
+                <p className="text-[11px] xs:text-xs sm:text-sm font-medium mt-0.5 break-words">
+                  Cliente: {diary.clientName || '-'}
+                </p>
+              </div>
+            </div>
+            <div className="text-left text-[10px] xs:text-xs sm:text-sm font-medium leading-tight space-y-0.5 w-full">
+              <div className="break-words">
+                Data: {diary.date ? new Date(diary.date).toLocaleDateString('pt-BR') : '-'}
+              </div>
+              <div className="break-words flex items-center gap-2">
+                <span>Responsável:</span>
+                <span className="flex-1 border-b border-gray-400 h-[1px]"></span>
+              </div>
+            </div>
+          </header>
 
-      <div className="space-y-2 xs:space-y-3 sm:space-y-4 text-[10px] xs:text-xs w-full">{children}</div>
+          <main className="flex-1 space-y-2 xs:space-y-3 sm:space-y-4 text-[10px] xs:text-xs w-full">
+            {children}
+          </main>
 
-      <footer className="pt-2 xs:pt-3 sm:pt-4 mt-3 xs:mt-4 sm:mt-6 border-t-2 border-gray-400 text-[10px] xs:text-xs flex flex-col gap-2 sm:flex-row sm:justify-between sm:gap-0 w-full">
-        <div className="break-words min-w-0 flex-1">
-          <p className="font-semibold">Gontijo Fundações</p>
-          <p>Nome: {diary.geotestSignature || '-'}</p>
+          {/* Rodapé simples, sem assinaturas para evitar duplicidade */}
+          <footer className="pt-2 xs:pt-3 border-t border-gray-200 text-[9px] xs:text-[10px] text-gray-500 flex items-center justify-between">
+            <span>Geoteste • Diário de Obra</span>
+            <span>{diary.date ? new Date(diary.date).toLocaleDateString('pt-BR') : ''}</span>
+          </footer>
         </div>
-        <div className="text-left sm:text-right break-words min-w-0 flex-1">
-          <p className="font-semibold">Responsável da obra</p>
-          <p>{diary.responsibleSignature || '-'}</p>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 };
@@ -90,8 +100,8 @@ export const PdfRow: React.FC<PdfRowProps> = ({ label, value = '-', span = 1, pl
       style={{ gridColumn: gridSpan }}
     >
       <p className="font-semibold uppercase text-[8px] xs:text-[9px] sm:text-[10px] mb-0.5 leading-tight break-words">{label}</p>
-      <div className="min-h-[20px] xs:min-h-[24px] sm:min-h-[28px] flex items-center text-[9px] xs:text-[10px] sm:text-[11px] break-words">
-        {placeholder ? <span className="border-b border-gray-400 w-full"></span> : value}
+      <div className="min-h-[32px] xs:min-h-[40px] sm:min-h-[48px] flex items-center text-[9px] xs:text-[10px] sm:text-[11px] break-words">
+        {placeholder ? <span className="border-b border-gray-400 w-full block h-20 mt-2"></span> : value}
       </div>
     </div>
   );
