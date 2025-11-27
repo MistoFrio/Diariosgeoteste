@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { LogOut, FileText, Users, Building2, Home, Sun, Moon, User, Menu, X, ChevronLeft, Map } from 'lucide-react';
+import { LogOut, FileText, Users, Building2, Home, Sun, Moon, User, Menu, X, ChevronLeft, Map, UserCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { BottomNav } from './BottomNav';
 
@@ -39,8 +39,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
   const adminMenuItems = [
     ...baseMenuItems,
     { key: 'equipment', label: 'Equipamentos', icon: Map },
+    { key: 'users', label: 'Usuários e Colaboradores', icon: Users },
     { key: 'clients', label: 'Clientes', icon: Building2 },
-    { key: 'users', label: 'Usuários', icon: Users },
   ];
 
   const menuItems = user?.role === 'admin' ? adminMenuItems : baseMenuItems;
@@ -75,13 +75,20 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 flex-1">
             <div className="w-10 h-10 rounded-lg overflow-hidden shadow-sm">
               <img src="/logogeoteste.png" alt="Geoteste" className="w-full h-full object-contain p-1" />
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="font-bold text-gray-900 dark:text-white">Menu</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{user?.name}</p>
+              <div className="flex items-center space-x-2">
+                {user?.photoUrl ? (
+                  <div className="w-6 h-6 rounded-full overflow-hidden border border-green-200 dark:border-green-700">
+                    <img src={user.photoUrl} alt={user.name} className="w-full h-full object-cover" />
+                  </div>
+                ) : null}
+                <p className="text-xs text-gray-500 dark:text-gray-400">{user?.name}</p>
+              </div>
             </div>
           </div>
             <button
@@ -182,6 +189,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
             </button>
 
             <div className="hidden sm:flex items-center space-x-2 md:space-x-3">
+              {user?.photoUrl && (
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-green-200 dark:border-green-700">
+                  <img src={user.photoUrl} alt={user.name} className="w-full h-full object-cover" />
+                </div>
+              )}
               <div className="text-right leading-tight">
                 <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">{user?.name}</p>
               </div>

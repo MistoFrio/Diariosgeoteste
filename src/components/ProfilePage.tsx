@@ -1,23 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { User, Save, Edit3, Check, X, PenTool } from 'lucide-react';
+import { User, Save, Edit3, Check, X, PenTool, Camera, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { SignaturePadFixed as SignaturePad } from './SignaturePadFixed';
 import { saveSignatureToDatabase } from '../utils/signatureStorageFallback';
+import { uploadCollaboratorPhoto, deleteOldCollaboratorPhoto } from '../utils/collaboratorPhotoStorage';
+import { useToast } from '../contexts/ToastContext';
 
 export const ProfilePage: React.FC = () => {
   const { user } = useAuth();
+  const toast = useToast();
   const [signatureImage, setSignatureImage] = useState('');
   const [signatureImageUrl, setSignatureImageUrl] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingPhoto, setIsEditingPhoto] = useState(false);
   const [showSignaturePad, setShowSignaturePad] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Carregar assinatura do usuário
+  // Carregar dados do perfil (assinatura e foto)
   useEffect(() => {
-    const loadSignature = async () => {
+    const loadProfile = async () => {
       if (!isSupabaseConfigured || !user?.id) {
         return;
       }
@@ -26,27 +34,34 @@ export const ProfilePage: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('signature_image_url')
+          .select('signature_image_url, photo_url')
           .eq('id', user.id)
           .single();
 
         if (error) throw error;
 
         setSignatureImageUrl(data?.signature_image_url || '');
+        setPhotoUrl(data?.photo_url || null);
+        
         // Se houver URL, carregar a imagem para preview
         if (data?.signature_image_url) {
           setSignatureImage(data.signature_image_url);
         }
+        if (data?.photo_url) {
+          setPhotoPreview(data.photo_url);
+        }
       } catch (err: any) {
-        console.error('Erro ao carregar assinatura:', err);
+        console.error('Erro ao carregar perfil:', err);
         setSignatureImageUrl('');
         setSignatureImage('');
+        setPhotoUrl(null);
+        setPhotoPreview(null);
       } finally {
         setLoading(false);
       }
     };
 
-    loadSignature();
+    loadProfile();
   }, [user]);
 
   const handleSave = async () => {
@@ -127,6 +142,97 @@ export const ProfilePage: React.FC = () => {
     setShowSignaturePad(false);
   };
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Formato inválido. Use JPG, PNG ou WEBP');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Arquivo muito grande. Tamanho máximo: 5MB');
+      return;
+    }
+
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    setIsEditingPhoto(true);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoPreview(null);
+    setPhotoFile(null);
+    setIsEditingPhoto(true);
+  };
+
+  const handleSavePhoto = async () => {
+    if (!isSupabaseConfigured || !user?.id) {
+      toast.success('Foto salva (modo demonstração)');
+      setPhotoUrl(photoPreview);
+      setIsEditingPhoto(false);
+      return;
+    }
+
+    setUploadingPhoto(true);
+    setMessage(null);
+
+    try {
+      let newPhotoUrl = photoUrl;
+
+      // Upload da foto se houver nova
+      if (photoFile) {
+        const uploadedUrl = await uploadCollaboratorPhoto(photoFile, user.id);
+        if (!uploadedUrl) {
+          throw new Error('Erro ao fazer upload da foto');
+        }
+        newPhotoUrl = uploadedUrl;
+
+        // Se havia foto antiga, deletar
+        if (photoUrl && photoUrl !== uploadedUrl) {
+          await deleteOldCollaboratorPhoto(photoUrl);
+        }
+      } else if (!photoPreview && photoUrl) {
+        // Se removeu a foto, deletar do storage
+        await deleteOldCollaboratorPhoto(photoUrl);
+        newPhotoUrl = null;
+      }
+
+      // Atualizar no banco de dados
+      const { error } = await supabase
+        .from('profiles')
+        .update({ photo_url: newPhotoUrl })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setPhotoUrl(newPhotoUrl);
+      setPhotoFile(null);
+      setIsEditingPhoto(false);
+      toast.success('Foto salva com sucesso!');
+      setMessage({ type: 'success', text: 'Foto atualizada com sucesso!' });
+    } catch (err: any) {
+      console.error('Erro ao salvar foto:', err);
+      toast.error(err.message || 'Erro ao salvar foto');
+      setMessage({ type: 'error', text: 'Erro ao salvar foto. Tente novamente.' });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleCancelPhoto = () => {
+    setPhotoPreview(photoUrl);
+    setPhotoFile(null);
+    setIsEditingPhoto(false);
+    setMessage(null);
+  };
+
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -157,10 +263,36 @@ export const ProfilePage: React.FC = () => {
         
         <div className="p-5 sm:p-6">
           <div className="flex items-center space-x-4 mb-6">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-              <User className="w-8 h-8 text-green-600 dark:text-green-400" />
+            <div className="relative">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-green-100 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-700 flex items-center justify-center">
+                {photoPreview ? (
+                  <img
+                    src={photoPreview}
+                    alt={user?.name || 'Usuário'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-10 h-10 sm:w-12 sm:h-12 text-green-600 dark:text-green-400" />
+                )}
+              </div>
+              {isEditingPhoto && (
+                <div className="absolute -bottom-1 -right-1">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                      disabled={uploadingPhoto}
+                    />
+                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center hover:bg-green-700 transition-colors">
+                      <Camera className="w-4 h-4 text-white" />
+                    </div>
+                  </label>
+                </div>
+              )}
             </div>
-            <div>
+            <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{user?.name}</h3>
               <p className="text-gray-600 dark:text-gray-300">{user?.email}</p>
               <span className="inline-block px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-medium rounded-full mt-1">
@@ -168,6 +300,96 @@ export const ProfilePage: React.FC = () => {
               </span>
             </div>
           </div>
+
+          {/* Seção de edição de foto */}
+          {message && message.text.includes('Foto') && (
+            <div className={`mb-4 p-4 rounded-lg ${
+              message.type === 'success' 
+                ? 'bg-green-50 border border-green-200 dark:bg-green-900/20 dark:border-green-800' 
+                : 'bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800'
+            }`}>
+              <p className={`text-sm ${
+                message.type === 'success' 
+                  ? 'text-green-700 dark:text-green-300' 
+                  : 'text-red-700 dark:text-red-300'
+              }`}>
+                {message.text}
+              </p>
+            </div>
+          )}
+
+          {isEditingPhoto ? (
+            <div className="flex items-center space-x-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                  disabled={uploadingPhoto}
+                />
+                <div className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                  {uploadingPhoto ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Enviando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-4 h-4" />
+                      <span>Alterar Foto</span>
+                    </>
+                  )}
+                </div>
+              </label>
+              {photoPreview && (
+                <button
+                  onClick={handleRemovePhoto}
+                  disabled={uploadingPhoto}
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm disabled:opacity-50"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Remover</span>
+                </button>
+              )}
+              <button
+                onClick={handleSavePhoto}
+                disabled={uploadingPhoto || (!photoFile && photoPreview === photoUrl)}
+                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
+              >
+                {uploadingPhoto ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Salvando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>Salvar</span>
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleCancelPhoto}
+                disabled={uploadingPhoto}
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm disabled:opacity-50"
+              >
+                <X className="w-4 h-4" />
+                <span>Cancelar</span>
+              </button>
+            </div>
+          ) : (
+            <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+              <button
+                onClick={() => setIsEditingPhoto(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>{photoPreview ? 'Alterar Foto' : 'Adicionar Foto'}</span>
+              </button>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">JPG, PNG ou WEBP (máx. 5MB)</p>
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, User, Mail, Shield, ShieldCheck, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, User, Mail, Shield, ShieldCheck, Edit, Trash2, Phone, Camera, Loader2, X, Briefcase } from 'lucide-react';
 import { User as UserType } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,8 @@ import { useToast } from '../contexts/ToastContext';
 import { TableSkeleton, UserCardSkeleton } from './SkeletonLoader';
 import ConfirmDialog from './ConfirmDialog';
 import EmptyState from './EmptyState';
+import { uploadCollaboratorPhoto, deleteOldCollaboratorPhoto } from '../utils/collaboratorPhotoStorage';
+import FormInput from './FormInput';
 
 // Mock data
 const mockUsers: UserType[] = [
@@ -48,12 +50,18 @@ export const UsersManagement: React.FC = () => {
     userId: string | null;
     userName: string | null;
   }>({ isOpen: false, userId: null, userName: null });
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     role: 'user' as 'admin' | 'user',
-    password: ''
+    password: '',
+    phone: '',
+    collaboratorRole: '',
+    collaboratorStatus: 'ativo' as 'ativo' | 'inativo' | 'férias' | 'afastado'
   });
 
   // Buscar usuários do Supabase
@@ -84,7 +92,12 @@ export const UsersManagement: React.FC = () => {
             name: displayName,
             email: email || 'email@exemplo.com',
             role: profile.role || 'user',
-            createdAt: profile.created_at || new Date().toISOString()
+            createdAt: profile.created_at || new Date().toISOString(),
+            photoUrl: profile.photo_url || null,
+            phone: profile.phone || null,
+            collaboratorRole: profile.collaborator_role || null,
+            collaboratorStatus: profile.collaborator_status || null,
+            updatedAt: profile.updated_at
           };
         });
 
@@ -103,7 +116,9 @@ export const UsersManagement: React.FC = () => {
 
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.collaboratorRole?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleOpenModal = (user?: UserType) => {
@@ -113,16 +128,26 @@ export const UsersManagement: React.FC = () => {
         name: user.name,
         email: user.email,
         role: user.role,
-        password: ''
+        password: '',
+        phone: user.phone || '',
+        collaboratorRole: user.collaboratorRole || '',
+        collaboratorStatus: user.collaboratorStatus || 'ativo'
       });
+      setPhotoPreview(user.photoUrl || null);
+      setPhotoFile(null);
     } else {
       setEditingUser(null);
       setFormData({
         name: '',
         email: '',
         role: 'user',
-        password: ''
+        password: '',
+        phone: '',
+        collaboratorRole: '',
+        collaboratorStatus: 'ativo'
       });
+      setPhotoPreview(null);
+      setPhotoFile(null);
     }
     setShowModal(true);
   };
@@ -134,8 +159,41 @@ export const UsersManagement: React.FC = () => {
       name: '',
       email: '',
       role: 'user',
-      password: ''
+      password: '',
+      phone: '',
+      collaboratorRole: '',
+      collaboratorStatus: 'ativo'
     });
+    setPhotoPreview(null);
+    setPhotoFile(null);
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Formato inválido. Use JPG, PNG ou WEBP');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Arquivo muito grande. Tamanho máximo: 5MB');
+      return;
+    }
+
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoPreview(null);
+    setPhotoFile(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -167,13 +225,45 @@ export const UsersManagement: React.FC = () => {
     setError(null);
 
     try {
+      let photoUrl = editingUser?.photoUrl || null;
+      
+      // Upload da foto se houver nova
+      if (photoFile) {
+        setUploadingPhoto(true);
+        const userId = editingUser?.id || 'temp';
+        
+        try {
+          photoUrl = await uploadCollaboratorPhoto(photoFile, userId);
+          if (!photoUrl) {
+            toast.error('Erro ao fazer upload da foto');
+            setUploadingPhoto(false);
+            return;
+          }
+          
+          // Se estiver editando e havia foto antiga, deletar
+          if (editingUser?.photoUrl && editingUser.photoUrl !== photoUrl) {
+            await deleteOldCollaboratorPhoto(editingUser.photoUrl);
+          }
+        } catch (err: any) {
+          toast.error(err.message || 'Erro ao fazer upload da foto');
+          setUploadingPhoto(false);
+          return;
+        } finally {
+          setUploadingPhoto(false);
+        }
+      }
+
       if (editingUser) {
         // Atualizar usuário existente
         const { error } = await supabase
           .from('profiles')
           .update({
             name: formData.name,
-            role: formData.role
+            role: formData.role,
+            phone: formData.phone.trim() || null,
+            collaborator_role: formData.collaboratorRole.trim() || null,
+            collaborator_status: formData.collaboratorStatus,
+            photo_url: photoUrl
           })
           .eq('id', editingUser.id);
 
@@ -181,7 +271,15 @@ export const UsersManagement: React.FC = () => {
 
         setUsers(prev => prev.map(user => 
           user.id === editingUser.id 
-            ? { ...user, name: formData.name, role: formData.role }
+            ? { 
+                ...user, 
+                name: formData.name, 
+                role: formData.role,
+                phone: formData.phone || null,
+                collaboratorRole: formData.collaboratorRole || null,
+                collaboratorStatus: formData.collaboratorStatus,
+                photoUrl: photoUrl
+              }
             : user
         ));
         toast.success('Usuário atualizado com sucesso!');
@@ -212,6 +310,29 @@ export const UsersManagement: React.FC = () => {
             .eq('id', authData.user.id)
             .single();
 
+          // Atualizar perfil com campos de colaborador
+          const updateData: any = {
+            phone: formData.phone.trim() || null,
+            collaborator_role: formData.collaboratorRole.trim() || null,
+            collaborator_status: formData.collaboratorStatus,
+            photo_url: photoUrl
+          };
+
+          if (photoFile && authData.user.id) {
+            setUploadingPhoto(true);
+            try {
+              const newPhotoUrl = await uploadCollaboratorPhoto(photoFile, authData.user.id);
+              if (newPhotoUrl) {
+                updateData.photo_url = newPhotoUrl;
+                photoUrl = newPhotoUrl;
+              }
+            } catch (err) {
+              console.error('Erro ao fazer upload da foto após criação:', err);
+            } finally {
+              setUploadingPhoto(false);
+            }
+          }
+
           if (profileError) {
             console.warn('Perfil não encontrado, criando manualmente:', profileError);
             // Criar perfil manualmente se o trigger falhou
@@ -221,9 +342,17 @@ export const UsersManagement: React.FC = () => {
                 id: authData.user.id,
                 name: formData.name,
                 email: formData.email,
-                role: formData.role
+                role: formData.role,
+                ...updateData
               });
             if (insertError) throw insertError;
+          } else {
+            // Atualizar perfil existente com campos de colaborador
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update(updateData)
+              .eq('id', authData.user.id);
+            if (updateError) throw updateError;
           }
 
           const newUser: UserType = {
@@ -231,7 +360,11 @@ export const UsersManagement: React.FC = () => {
             name: formData.name,
             email: formData.email,
             role: formData.role,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            phone: formData.phone || null,
+            collaboratorRole: formData.collaboratorRole || null,
+            collaboratorStatus: formData.collaboratorStatus,
+            photoUrl: photoUrl
           };
           setUsers(prev => [newUser, ...prev]);
           toast.success('Usuário criado com sucesso!');
@@ -256,6 +389,8 @@ export const UsersManagement: React.FC = () => {
     const { userId } = confirmDialog;
     if (!userId) return;
 
+    const userToDelete = users.find(u => u.id === userId);
+    
     if (!isSupabaseConfigured) {
       setUsers(prev => prev.filter(user => user.id !== userId));
       toast.success('Usuário excluído com sucesso!');
@@ -264,6 +399,11 @@ export const UsersManagement: React.FC = () => {
     }
 
     try {
+      // Deletar foto do storage se houver
+      if (userToDelete?.photoUrl) {
+        await deleteOldCollaboratorPhoto(userToDelete.photoUrl);
+      }
+      
       // Deletar perfil (o usuário auth será deletado automaticamente pelo trigger)
       const { error } = await supabase
         .from('profiles')
@@ -357,8 +497,16 @@ export const UsersManagement: React.FC = () => {
                   <tr key={user.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td className="py-3 lg:py-4 px-4 lg:px-6">
                       <div className="flex items-center space-x-2 lg:space-x-3">
-                        <div className="w-8 h-8 lg:w-10 lg:h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                          <User className="text-green-600 dark:text-green-400 w-4 h-4 lg:w-5 lg:h-5" />
+                        <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full overflow-hidden bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0 border-2 border-green-200 dark:border-green-700">
+                          {user.photoUrl ? (
+                            <img
+                              src={user.photoUrl}
+                              alt={user.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="text-green-600 dark:text-green-400 w-4 h-4 lg:w-5 lg:h-5" />
+                          )}
                         </div>
                         <p className="font-medium text-gray-900 dark:text-gray-100 text-sm lg:text-base truncate">{user.name}</p>
                       </div>
@@ -417,8 +565,16 @@ export const UsersManagement: React.FC = () => {
                 <div key={user.id} className="p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                   <div className="flex items-start justify-between mb-2 sm:mb-3">
                     <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                        <User className="text-green-600 dark:text-green-400 w-5 h-5 sm:w-6 sm:h-6" />
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0 border-2 border-green-200 dark:border-green-700">
+                        {user.photoUrl ? (
+                          <img
+                            src={user.photoUrl}
+                            alt={user.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="text-green-600 dark:text-green-400 w-5 h-5 sm:w-6 sm:h-6" />
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">{user.name}</p>
@@ -426,6 +582,12 @@ export const UsersManagement: React.FC = () => {
                           <Mail className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 flex-shrink-0" />
                           <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">{user.email}</p>
                         </div>
+                        {user.phone && (
+                          <div className="flex items-center space-x-1 sm:space-x-1.5 mt-0.5">
+                            <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 flex-shrink-0" />
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">{user.phone}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -502,6 +664,58 @@ export const UsersManagement: React.FC = () => {
             </div>
             
             <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
+              {/* Photo Upload */}
+              <div className="flex flex-col items-center space-y-3">
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-green-100 dark:bg-green-900/30 border-2 border-green-200 dark:border-green-700">
+                    {photoPreview ? (
+                      <img
+                        src={photoPreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <User className="w-12 h-12 text-green-600 dark:text-green-400" />
+                      </div>
+                    )}
+                  </div>
+                  {photoPreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                    disabled={uploadingPhoto}
+                  />
+                  <div className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                    {uploadingPhoto ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Enviando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="w-4 h-4" />
+                        <span>{photoPreview ? 'Alterar Foto' : 'Adicionar Foto'}</span>
+                      </>
+                    )}
+                  </div>
+                </label>
+                <p className="text-xs text-gray-500">JPG, PNG ou WEBP (máx. 5MB)</p>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                   Nome Completo *
@@ -544,6 +758,39 @@ export const UsersManagement: React.FC = () => {
                 </select>
               </div>
               
+              <FormInput
+                label="Telefone (opcional)"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                placeholder="(00) 00000-0000"
+              />
+
+              <FormInput
+                label="Função/Cargo do Colaborador (opcional)"
+                type="text"
+                value={formData.collaboratorRole}
+                onChange={(e) => setFormData(prev => ({ ...prev, collaboratorRole: e.target.value }))}
+                placeholder="Ex: Operador, Ajudante, Encarregado"
+                maxLength={50}
+              />
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                  Status do Colaborador
+                </label>
+                <select
+                  value={formData.collaboratorStatus}
+                  onChange={(e) => setFormData(prev => ({ ...prev, collaboratorStatus: e.target.value as any }))}
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="ativo">Ativo</option>
+                  <option value="inativo">Inativo</option>
+                  <option value="férias">Férias</option>
+                  <option value="afastado">Afastado</option>
+                </select>
+              </div>
+
               {!editingUser && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
@@ -571,11 +818,11 @@ export const UsersManagement: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || uploadingPhoto}
                   className="w-full sm:w-auto px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
-                  {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {submitting ? 'Salvando...' : (editingUser ? 'Atualizar' : 'Cadastrar')}
+                  {(submitting || uploadingPhoto) && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {(submitting || uploadingPhoto) ? 'Salvando...' : (editingUser ? 'Atualizar' : 'Cadastrar')}
                 </button>
               </div>
             </form>

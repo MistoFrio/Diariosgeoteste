@@ -22,6 +22,7 @@ import FormInput from './FormInput';
 import FormTextarea from './FormTextarea';
 import EmptyState from './EmptyState';
 import ConfirmDialog from './ConfirmDialog';
+import { TeamsPanel } from './TeamsPanel';
 
 const defaultCenter: LatLngExpression = [-15.78, -47.93]; // Brasília como centro padrão
 
@@ -798,6 +799,14 @@ export const EquipmentMap: React.FC = () => {
             })}
           </div>
         )}
+      </section>
+
+      {/* Teams Panel */}
+      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <TeamsPanel 
+          equipmentList={filteredEquipment} 
+          onAssignmentChange={fetchEquipment}
+        />
       </section>
 
       <ConfirmDialog

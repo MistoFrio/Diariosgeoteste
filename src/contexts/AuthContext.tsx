@@ -66,13 +66,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         // Map básico para nosso tipo User
-        const profile = await supabase.from('profiles').select('name, role, created_at').eq('id', session.user.id).single();
+        const profile = await supabase.from('profiles').select('name, role, created_at, photo_url, phone, collaborator_role, collaborator_status').eq('id', session.user.id).single();
         setUser({
           id: session.user.id,
           name: profile.data?.name || session.user.email || 'Usuário',
           email: session.user.email || '',
           role: (profile.data?.role as 'admin' | 'user') || 'user',
           createdAt: profile.data?.created_at || new Date().toISOString(),
+          photoUrl: profile.data?.photo_url || null,
+          phone: profile.data?.phone || null,
+          collaboratorRole: profile.data?.collaborator_role || null,
+          collaboratorStatus: profile.data?.collaborator_status || null,
         });
       } else {
         setUser(null);
@@ -87,13 +91,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       (async () => {
-        const profile = await supabase.from('profiles').select('name, role, created_at').eq('id', session.user!.id).single();
+        const profile = await supabase.from('profiles').select('name, role, created_at, photo_url, phone, collaborator_role, collaborator_status').eq('id', session.user!.id).single();
         setUser({
           id: session.user!.id,
           name: profile.data?.name || session.user!.email || 'Usuário',
           email: session.user!.email || '',
           role: (profile.data?.role as 'admin' | 'user') || 'user',
           createdAt: profile.data?.created_at || new Date().toISOString(),
+          photoUrl: profile.data?.photo_url || null,
+          phone: profile.data?.phone || null,
+          collaboratorRole: profile.data?.collaborator_role || null,
+          collaboratorStatus: profile.data?.collaborator_status || null,
         });
       })();
     });
