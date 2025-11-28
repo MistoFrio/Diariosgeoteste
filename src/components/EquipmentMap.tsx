@@ -22,7 +22,7 @@ import FormInput from './FormInput';
 import FormTextarea from './FormTextarea';
 import EmptyState from './EmptyState';
 import ConfirmDialog from './ConfirmDialog';
-import { TeamsPanel } from './TeamsPanel';
+import { EquipmentCollaboratorsPanel } from './EquipmentCollaboratorsPanel';
 
 const defaultCenter: LatLngExpression = [-15.78, -47.93]; // Brasília como centro padrão
 
@@ -453,16 +453,16 @@ export const EquipmentMap: React.FC = () => {
             }}
           >
             <Popup>
-              <div className="space-y-1 text-sm">
-                <p className="font-semibold">{item.name}</p>
-                <p className="text-gray-600">{item.address}</p>
-                {item.clientName && <p className="text-xs text-gray-500">Cliente: {item.clientName}</p>}
-                <p className="text-xs text-gray-500">
+              <div className="space-y-1 text-xs sm:text-sm max-w-[200px] sm:max-w-none">
+                <p className="font-semibold break-words">{item.name}</p>
+                <p className="text-gray-600 break-words">{item.address}</p>
+                {item.clientName && <p className="text-[10px] sm:text-xs text-gray-500 break-words">Cliente: {item.clientName}</p>}
+                <p className="text-[10px] sm:text-xs text-gray-500 break-all">
                   Lat/Lng: {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
                 </p>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex gap-1.5 sm:gap-2">
                   <button
-                    className="flex-1 rounded-lg bg-green-600 px-2 py-1 text-xs font-semibold text-white hover:bg-green-700"
+                    className="flex-1 rounded-lg bg-green-600 px-2 py-1 text-[10px] sm:text-xs font-semibold text-white hover:bg-green-700 whitespace-nowrap"
                     onClick={(e) => {
                       e.preventDefault();
                       handleEdit(item);
@@ -471,7 +471,7 @@ export const EquipmentMap: React.FC = () => {
                     Editar
                   </button>
                   <button
-                    className="flex-1 rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                    className="flex-1 rounded-lg border border-red-200 px-2 py-1 text-[10px] sm:text-xs font-semibold text-red-600 hover:bg-red-50 whitespace-nowrap"
                     onClick={(e) => {
                       e.preventDefault();
                       openDeleteDialog(item);
@@ -489,18 +489,18 @@ export const EquipmentMap: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <header>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Mapa Interativo</p>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Equipamentos em campo</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-300">
+        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Mapa Interativo</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Equipamentos em campo</h1>
+        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
           Cadastre os equipamentos e acompanhe no mapa onde cada um está localizado.
         </p>
       </header>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+      <section className="rounded-2xl border border-gray-100 bg-white p-3 sm:p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
             <ListFilter className="h-4 w-4" />
             <span>Filtros rápidos</span>
           </div>
@@ -511,7 +511,7 @@ export const EquipmentMap: React.FC = () => {
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}
-                  className={`flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold capitalize transition ${
+                  className={`flex items-center gap-1 rounded-full border px-2.5 sm:px-3 py-1 text-xs font-semibold capitalize transition ${
                     isActive
                       ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-200'
                       : 'border-gray-200 text-gray-600 hover:border-green-200 hover:text-green-600 dark:border-gray-700 dark:text-gray-300'
@@ -528,7 +528,7 @@ export const EquipmentMap: React.FC = () => {
               );
             })}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <select
               value={clientFilter}
               onChange={(e) => setClientFilter(e.target.value)}
@@ -548,7 +548,7 @@ export const EquipmentMap: React.FC = () => {
                   setStatusFilter('all');
                   setClientFilter('');
                 }}
-                className="text-xs font-semibold text-gray-500 underline hover:text-gray-900 dark:text-gray-300"
+                className="text-xs font-semibold text-gray-500 underline hover:text-gray-900 dark:text-gray-300 sm:self-center"
               >
                 Limpar
               </button>
@@ -557,11 +557,11 @@ export const EquipmentMap: React.FC = () => {
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[420px,1fr]">
-        <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="mb-4 flex items-center justify-between">
-            <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[420px,1fr]">
+        <section className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex-1">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
               {editingEquipment ? 'Editar equipamento' : 'Cadastrar equipamento'}
             </h2>
             <p className="text-xs text-gray-500">
@@ -573,7 +573,7 @@ export const EquipmentMap: React.FC = () => {
             <button
               type="button"
               onClick={resetForm}
-              className="text-xs text-gray-500 hover:text-gray-900 dark:hover:text-white"
+              className="text-xs text-gray-500 hover:text-gray-900 dark:hover:text-white sm:ml-2"
             >
             {editingEquipment ? 'Cancelar edição' : 'Limpar'}
             </button>
@@ -622,7 +622,7 @@ export const EquipmentMap: React.FC = () => {
               rows={2}
             />
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={handleGeocode}
@@ -630,12 +630,12 @@ export const EquipmentMap: React.FC = () => {
                 className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isGeocoding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Target className="h-4 w-4" />}
-                Localizar endereço
+                <span className="whitespace-nowrap">Localizar endereço</span>
               </button>
               {hasCoordinates && (
-                <div className="flex items-center gap-2 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-200">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Localização confirmada
+                <div className="flex items-center justify-center gap-2 rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-200">
+                  <Sparkles className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Localização confirmada</span>
                 </div>
               )}
             </div>
@@ -685,48 +685,48 @@ export const EquipmentMap: React.FC = () => {
           </form>
         </section>
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <section className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div className="mb-4 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Mapa dos equipamentos</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Mapa dos equipamentos</h2>
                 <p className="text-xs text-gray-500">Clique em um marcador para ver os detalhes</p>
               </div>
               <button
                 type="button"
                 onClick={fetchEquipment}
                 disabled={isLoading}
-                className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition hover:border-green-200 hover:text-green-600 disabled:opacity-60 dark:border-gray-700 dark:text-gray-300"
+                className="flex items-center gap-2 rounded-lg border border-gray-200 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-600 transition hover:border-green-200 hover:text-green-600 disabled:opacity-60 dark:border-gray-700 dark:text-gray-300 flex-shrink-0"
               >
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                Atualizar
+                <span className="hidden sm:inline">Atualizar</span>
               </button>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-gray-500">
               {statusOptions.map((status) => (
-                <div key={status} className="flex items-center gap-2 rounded-full border border-gray-200/70 px-3 py-1 dark:border-gray-700">
+                <div key={status} className="flex items-center gap-2 rounded-full border border-gray-200/70 px-2.5 sm:px-3 py-1 dark:border-gray-700">
                   <span
-                    className="h-3 w-3 rounded-full"
+                    className="h-3 w-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: getStatusColor(status) }}
                   />
-                  <span className="capitalize">{status}</span>
+                  <span className="capitalize whitespace-nowrap">{status}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="h-[420px] overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800">
+          <div className="h-[300px] sm:h-[420px] overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800">
             {renderMap()}
           </div>
         </section>
       </div>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
+      <section className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+          <div className="flex-1 min-w-0">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Lista de equipamentos</h2>
             <p className="text-xs text-gray-500">Selecione um item para centralizar no mapa</p>
           </div>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
             Mostrando {filteredEquipment.length} de {equipmentList.length} equipamento(s)
           </p>
         </div>
@@ -745,42 +745,42 @@ export const EquipmentMap: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => setSelectedEquipment(item)}
-                  className={`rounded-2xl border p-4 text-left transition hover:border-green-200 hover:shadow ${
+                  className={`rounded-2xl border p-3 sm:p-4 text-left transition hover:border-green-200 hover:shadow ${
                     isActive
                       ? 'border-green-500 bg-green-50 dark:border-green-500/80 dark:bg-green-900/10'
                       : 'border-gray-100 dark:border-gray-800'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">{item.name}</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{item.address}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white break-words">{item.name}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 break-words mt-1">{item.address}</p>
                     </div>
                     <span
-                      className="rounded-full px-2 py-0.5 text-xs font-semibold capitalize"
+                      className="rounded-full px-2 py-0.5 text-xs font-semibold capitalize flex-shrink-0"
                       style={{ backgroundColor: `${getStatusColor(item.status)}22`, color: getStatusColor(item.status) }}
                     >
                       {item.status}
                     </span>
                   </div>
                   {item.clientName && (
-                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Cliente: {item.clientName}</p>
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 break-words">Cliente: {item.clientName}</p>
                   )}
                   <div className="mt-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                    <Target className="h-3.5 w-3.5" />
-                    {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
+                    <Target className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span className="break-all">{item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}</span>
                   </div>
-                  <div className="mt-3 flex items-center gap-3">
+                  <div className="mt-3 flex items-center gap-2 sm:gap-3">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEdit(item);
                       }}
-                      className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-600 transition hover:border-blue-200 hover:text-blue-600 dark:border-gray-700 dark:text-gray-300"
+                      className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-gray-200 px-2 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-blue-200 hover:text-blue-600 dark:border-gray-700 dark:text-gray-300"
                     >
                       <Pencil className="h-3.5 w-3.5" />
-                      Editar
+                      <span>Editar</span>
                     </button>
                     <button
                       type="button"
@@ -788,10 +788,10 @@ export const EquipmentMap: React.FC = () => {
                         e.stopPropagation();
                         openDeleteDialog(item);
                       }}
-                      className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-500/50 dark:text-red-300"
+                      className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-red-200 px-2 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-500/50 dark:text-red-300"
                     >
                       <Trash className="h-3.5 w-3.5" />
-                      Excluir
+                      <span>Excluir</span>
                     </button>
                   </div>
                 </button>
@@ -801,9 +801,9 @@ export const EquipmentMap: React.FC = () => {
         )}
       </section>
 
-      {/* Teams Panel */}
-      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <TeamsPanel 
+      {/* Equipment Collaborators Panel */}
+      <section className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <EquipmentCollaboratorsPanel 
           equipmentList={filteredEquipment} 
           onAssignmentChange={fetchEquipment}
         />
