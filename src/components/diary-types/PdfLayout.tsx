@@ -33,8 +33,8 @@ interface PdfTableProps {
 export const PdfLayout: React.FC<PdfLayoutProps> = ({ diary, title, children }) => {
   return (
     <div className="w-full py-4 xs:py-6 sm:py-8">
-      <div className="max-w-[900px] mx-auto px-2 xs:px-4">
-        <div className="mx-auto w-full max-w-[794px] min-h-[1123px] bg-white text-gray-900 shadow-[0_8px_24px_rgba(15,23,42,0.08)] border border-gray-200 rounded-md pt-5 xs:pt-6 sm:pt-8 px-4 xs:px-6 sm:px-8 pb-5 xs:pb-6 sm:pb-8 flex flex-col gap-4 box-border">
+      <div className="max-w-[1600px] mx-auto px-2 xs:px-3">
+        <div className="mx-auto w-full max-w-[1460px] min-h-[1123px] bg-white text-gray-900 shadow-[0_8px_24px_rgba(15,23,42,0.08)] border border-gray-200 rounded-md pt-5 xs:pt-6 sm:pt-8 px-3 xs:px-4 sm:px-5 pb-5 xs:pb-6 sm:pb-8 flex flex-col gap-4 box-border">
           <header className="flex flex-col border-b border-gray-300 pb-3 xs:pb-4 gap-2 w-full">
             <div className="flex items-center gap-2 xs:gap-3 sm:gap-4 w-full min-w-0">
               <img src="/logogeoteste.png" alt="Geoteste" className="h-7 xs:h-8 sm:h-9 md:h-10 flex-shrink-0" />
@@ -61,12 +61,6 @@ export const PdfLayout: React.FC<PdfLayoutProps> = ({ diary, title, children }) 
           <main className="flex-1 space-y-2 xs:space-y-3 sm:space-y-4 text-[10px] xs:text-xs w-full">
             {children}
           </main>
-
-          {/* Rodapé simples, sem assinaturas para evitar duplicidade */}
-          <footer className="pt-2 xs:pt-3 border-t border-gray-200 text-[9px] xs:text-[10px] text-gray-500 flex items-center justify-between">
-            <span>Geoteste • Diário de Obra</span>
-            <span>{diary.date ? new Date(diary.date).toLocaleDateString('pt-BR') : ''}</span>
-          </footer>
         </div>
       </div>
     </div>
@@ -75,8 +69,12 @@ export const PdfLayout: React.FC<PdfLayoutProps> = ({ diary, title, children }) 
 
 export const PdfSection: React.FC<PdfSectionProps> = ({ title, columns = 3, children }) => {
   const template = `repeat(${columns}, minmax(0, 1fr))`;
+  const isAssinaturas = title?.toUpperCase().includes('ASSINATURA');
   return (
-    <section className="border border-gray-400 overflow-hidden w-full">
+    <section 
+      className="border border-gray-400 overflow-hidden w-full"
+      data-pdf-section={isAssinaturas ? 'assinaturas' : undefined}
+    >
       {title && (
         <div className="bg-gray-200 border-b border-gray-400 px-1.5 xs:px-2 sm:px-3 py-1 xs:py-1.5 sm:py-2 font-bold uppercase text-[9px] xs:text-[10px] sm:text-[11px]">
           {title}
@@ -94,12 +92,20 @@ export const PdfSection: React.FC<PdfSectionProps> = ({ title, columns = 3, chil
 
 export const PdfRow: React.FC<PdfRowProps> = ({ label, value = '-', span = 1, placeholder }) => {
   const gridSpan = `span ${span} / span ${span}`;
+  const labelStr = typeof label === 'string' ? label.toUpperCase() : '';
+  const isEquipamento = labelStr.includes('EQUIPAMENTO');
+  const labelTextClasses = isEquipamento 
+    ? 'text-[9px] xs:text-[10px] sm:text-[11px] whitespace-nowrap'
+    : 'text-[9px] xs:text-[10px] sm:text-[11px] break-words';
+  const containerClasses = isEquipamento
+    ? 'border-b border-gray-300 pl-0.5 xs:pl-1 sm:pl-1.5 pr-1 xs:pr-1.5 sm:pr-2 md:pr-3 py-1 xs:py-1.5 sm:py-2 min-w-0 overflow-hidden'
+    : 'border-b border-gray-300 px-1 xs:px-1.5 sm:px-2 md:px-3 py-1 xs:py-1.5 sm:py-2 min-w-0 overflow-hidden';
   return (
     <div
-      className="border-b border-gray-300 px-1 xs:px-1.5 sm:px-2 md:px-3 py-1 xs:py-1.5 sm:py-2 min-w-0 overflow-hidden"
+      className={containerClasses}
       style={{ gridColumn: gridSpan }}
     >
-      <p className="font-semibold uppercase text-[8px] xs:text-[9px] sm:text-[10px] mb-0.5 leading-tight break-words">{label}</p>
+      <p className={`font-semibold uppercase ${labelTextClasses} mb-0.5 leading-tight`}>{label}</p>
       <div className="min-h-[32px] xs:min-h-[40px] sm:min-h-[48px] flex items-center text-[9px] xs:text-[10px] sm:text-[11px] break-words">
         {placeholder ? <span className="border-b border-gray-400 w-full block h-20 mt-2"></span> : value}
       </div>
@@ -136,11 +142,21 @@ export const PdfTable: React.FC<PdfTableProps> = ({ headers, rows, columnWidths 
           className="grid bg-gray-100 text-[8px] xs:text-[9px] sm:text-[10px] font-semibold uppercase text-gray-800 w-full"
           style={{ gridTemplateColumns: template, minWidth: 0 }}
         >
-          {headers.map((header, idx) => (
-            <div key={idx} className="px-1 xs:px-1.5 sm:px-2 py-1 xs:py-1.5 sm:py-2 border-r border-gray-300 last:border-r-0 text-center min-w-0 overflow-hidden">
-              <div className="break-words whitespace-normal leading-tight">{header}</div>
-            </div>
-          ))}
+          {headers.map((header, idx) => {
+            const headerStr = typeof header === 'string' ? header.toUpperCase() : '';
+            const isEquipamento = headerStr.includes('EQUIPAMENTO');
+            const headerClasses = isEquipamento
+              ? 'whitespace-nowrap leading-tight text-[9px] xs:text-[10px] sm:text-[11px]'
+              : 'break-words whitespace-normal leading-tight text-[9px] xs:text-[10px] sm:text-[11px]';
+            const headerContainerClasses = isEquipamento
+              ? 'pl-0.5 xs:pl-1 sm:pl-1.5 pr-1 xs:pr-1.5 sm:pr-2 py-1 xs:py-1.5 sm:py-2 border-r border-gray-300 last:border-r-0 text-center min-w-0 overflow-hidden'
+              : 'px-1 xs:px-1.5 sm:px-2 py-1 xs:py-1.5 sm:py-2 border-r border-gray-300 last:border-r-0 text-center min-w-0 overflow-hidden';
+            return (
+              <div key={idx} className={headerContainerClasses}>
+                <div className={headerClasses}>{header}</div>
+              </div>
+            );
+          })}
         </div>
         {rows.length > 0 ? (
           rows.map((row, rowIdx) => (
