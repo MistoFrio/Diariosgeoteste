@@ -434,9 +434,10 @@ export const EquipmentMap: React.FC = () => {
       <MapContainer
         center={derivedCenter}
         zoom={5}
-        className="h-full w-full"
+        className="h-full w-full relative z-0"
         scrollWheelZoom
         preferCanvas
+        style={{ isolation: 'isolate' }}
       >
         <MapAutoCenter center={derivedCenter} />
         <TileLayer
@@ -714,7 +715,7 @@ export const EquipmentMap: React.FC = () => {
               ))}
             </div>
           </div>
-          <div className="h-[300px] sm:h-[420px] overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800">
+          <div className="h-[300px] sm:h-[420px] overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 relative isolate">
             {renderMap()}
           </div>
         </section>

@@ -22,55 +22,86 @@ const formatTime = (value?: string) => {
 export const PCEDiaryView: React.FC<PCEDiaryViewProps> = ({ diary, pceDetail = {}, pcePiles = [] }) => {
   return (
     <PdfLayout diary={diary} title="DIÁRIO DE OBRA • PCE">
-      <PdfSection columns={4} title="Identificação">
-        <PdfRow label="Cliente" value={diary.clientName} span={2} />
-        <PdfRow label="Data" value={formatDate(diary.date)} />
-        <PdfRow label="Equipamento" value={pceDetail.equipamento || diary.equipment || '-'} />
-        <PdfRow label="Endereço" value={diary.address} span={2} />
-        <PdfRow label="Horário de início" value={diary.startTime || '-'} span={1} />
-        <PdfRow label="Horário de término" value={diary.endTime || '-'} span={1} />
-        <PdfRow label="Equipe" value={diary.team} span={4} />
-      </PdfSection>
-
-      <PdfSection columns={3} title="Clima">
-        <PdfRow label="Ensolarado" value={<PdfValue checked={!!diary?.weather_ensolarado} />} />
-        <PdfRow label="Chuva fraca" value={<PdfValue checked={!!diary?.weather_chuva_fraca} />} />
-        <PdfRow label="Chuva forte" value={<PdfValue checked={!!diary?.weather_chuva_forte} />} />
-      </PdfSection>
-
-      <PdfSection columns={3} title="Dados do ensaio">
-        <PdfRow label="Tipo de ensaio" value={pceDetail.ensaio_tipo || '-'} span={2} />
-        <PdfRow
-          label="Carregamentos"
-          value={Array.isArray(pceDetail.carregamento_tipos) && pceDetail.carregamento_tipos.length > 0 ? pceDetail.carregamento_tipos.join(', ') : '-'}
-        />
-        <PdfRow label="Macaco" value={pceDetail.equipamentos_macaco || '-'} />
-        <PdfRow label="Célula" value={pceDetail.equipamentos_celula || '-'} />
-        <PdfRow label="Manômetro" value={pceDetail.equipamentos_manometro || '-'} />
-        <PdfRow label="Relógios" value={pceDetail.equipamentos_relogios || '-'} />
-        <PdfRow label="Conjunto de vigas" value={pceDetail.equipamentos_conjunto_vigas || '-'} span={3} />
+      <PdfSection columns={5} title="Identificação">
+        <PdfRow label="Equipamento" value={pceDetail.equipamento || diary.equipment || 'PCE'} />
+        <PdfRow label="Início" value={diary.startTime || '-'} />
+        <PdfRow label="Término" value={diary.endTime || '-'} />
+        <PdfRow label="Equipe" value={diary.team} span={2} />
+        <PdfRow label="Endereço" value={diary.address} span={5} />
       </PdfSection>
 
       <section className="border border-gray-400">
-        <div className="bg-gray-200 border-b border-gray-400 px-1.5 xs:px-2 sm:px-3 py-1 xs:py-1.5 sm:py-2 font-bold uppercase text-[9px] xs:text-[10px] sm:text-[11px]">
-          Estacas ensaiadas
+        <div className="bg-gray-200 border-b border-gray-400 px-0.5 py-0.5 font-bold uppercase text-[6px] flex items-center">
+          Clima
         </div>
-        <div className="p-1.5 xs:p-2 sm:p-3">
+        <div className="px-0.5 py-1 flex items-center gap-4 text-[7px]">
+          <PdfValue label="Ensolarado" checked={!!diary?.weather_ensolarado} />
+          <PdfValue label="Chuva fraca" checked={!!diary?.weather_chuva_fraca} />
+          <PdfValue label="Chuva forte" checked={!!diary?.weather_chuva_forte} />
+        </div>
+      </section>
+
+      <PdfSection columns={4} title="Dados do ensaio">
+        <PdfRow label="Tipo" value={pceDetail.ensaio_tipo || '-'} span={2} />
+        <PdfRow
+          label="Carregamento"
+          value={Array.isArray(pceDetail.carregamento_tipos) && pceDetail.carregamento_tipos.length > 0 ? pceDetail.carregamento_tipos.join(', ') : '-'}
+          span={2}
+        />
+        <PdfRow label="Macaco" value={pceDetail.equipamentos_macaco || '-'} />
+        <PdfRow 
+          label={pceDetail.ensaio_tipo === 'PCE HELICOIDAL' ? 'Célula de carga' : 'Célula'} 
+          value={pceDetail.equipamentos_celula || '-'} 
+        />
+        <PdfRow label="Manômetro" value={pceDetail.equipamentos_manometro || '-'} />
+        <PdfRow label="Relógios" value={pceDetail.equipamentos_relogios || '-'} />
+        <PdfRow label="Vigas" value={pceDetail.equipamentos_conjunto_vigas || '-'} span={4} />
+      </PdfSection>
+
+      <section className="border border-gray-400 mb-1" data-pdf-section="estacas">
+        <div className="bg-gray-200 border-b border-gray-400 px-1 py-1 font-bold uppercase text-[7px]">
+          Estacas
+        </div>
+        <div className="p-1.5">
           <PdfTable
-            headers={[
-              'Estaca',
-              'Tipo',
-              'Profundidade (m)',
-              'Carga trabalho (tf)',
-              'Diâmetro (cm)',
-            ]}
-            rows={pcePiles.map((pile) => [
-              pile.estaca_nome || '-',
-              pile.estaca_tipo || '-',
-              pile.estaca_profundidade_m || '-',
-              pile.estaca_carga_trabalho_tf || '-',
-              pile.estaca_diametro_cm || '-',
-            ])}
+            headers={
+              pceDetail.ensaio_tipo === 'PCE HELICOIDAL'
+                ? [
+                    'Estaca',
+                    'Tipo',
+                    'Profundidade (metros)',
+                    'Carga de trabalho (tf)',
+                    'Carga de ensaio (tf)',
+                    'Diâmetro (cm)',
+                  ]
+                : [
+                    'Estaca',
+                    'Tipo',
+                    'Profundidade (metros)',
+                    'Carga (tf)',
+                    'Diâmetro (cm)',
+                  ]
+            }
+            rows={pcePiles.map((pile) => {
+              if (pceDetail.ensaio_tipo === 'PCE HELICOIDAL') {
+                return [
+                  pile.estaca_nome || '-',
+                  pile.estaca_tipo || '-',
+                  pile.estaca_profundidade_m || '-',
+                  pile.estaca_carga_trabalho_tf || '-',
+                  pile.estaca_carga_ensaio_tf || '-',
+                  pile.estaca_diametro_cm || '-',
+                ];
+              } else {
+                return [
+                  pile.estaca_nome || '-',
+                  pile.estaca_tipo || '-',
+                  pile.estaca_profundidade_m || '-',
+                  pile.estaca_carga_trabalho_tf || '-',
+                  pile.estaca_diametro_cm || '-',
+                ];
+              }
+            })}
           />
         </div>
       </section>
@@ -81,7 +112,7 @@ export const PCEDiaryView: React.FC<PCEDiaryViewProps> = ({ diary, pceDetail = {
 
       {/* Equipamento de cravação - Apenas para PCE HELICOIDAL */}
       {pceDetail.ensaio_tipo === 'PCE HELICOIDAL' && (
-        <PdfSection columns={3} title="Equipamento de cravação">
+        <PdfSection columns={3} title="Cravação">
           <PdfRow label="Equipamento" value={pceDetail.cravacao_equipamento || '-'} span={2} />
           <PdfRow label="Horímetro" value={pceDetail.cravacao_horimetro || '-'} />
         </PdfSection>
@@ -90,14 +121,14 @@ export const PCEDiaryView: React.FC<PCEDiaryViewProps> = ({ diary, pceDetail = {
       {/* Abastecimento - Apenas para PCE HELICOIDAL */}
       {pceDetail.ensaio_tipo === 'PCE HELICOIDAL' && (
         <PdfSection columns={4} title="Abastecimento">
-          <PdfRow label="Mobilização tanque (L)" value={pceDetail.abastecimento_mobilizacao_litros_tanque ?? '-'} />
-          <PdfRow label="Mobilização galão (L)" value={pceDetail.abastecimento_mobilizacao_litros_galao ?? '-'} />
-          <PdfRow label="Final do dia tanque (L)" value={pceDetail.abastecimento_finaldia_litros_tanque ?? '-'} />
-          <PdfRow label="Final do dia galão (L)" value={pceDetail.abastecimento_finaldia_litros_galao ?? '-'} />
+          <PdfRow label="Mobilização Tanque (L)" value={pceDetail.abastecimento_mobilizacao_litros_tanque ?? '-'} />
+          <PdfRow label="Mobilização Galão (L)" value={pceDetail.abastecimento_mobilizacao_litros_galao ?? '-'} />
+          <PdfRow label="Final Tanque (L)" value={pceDetail.abastecimento_finaldia_litros_tanque ?? '-'} />
+          <PdfRow label="Final Galão (L)" value={pceDetail.abastecimento_finaldia_litros_galao ?? '-'} />
           <PdfRow
-            label="Chegou diesel?"
+            label="Diesel?"
             value={
-              <div className="flex gap-4">
+              <div className="flex gap-2">
                 <PdfValue label="Sim" checked={pceDetail.abastecimento_chegou_diesel === true} />
                 <PdfValue label="Não" checked={pceDetail.abastecimento_chegou_diesel === false} />
               </div>
@@ -106,7 +137,7 @@ export const PCEDiaryView: React.FC<PCEDiaryViewProps> = ({ diary, pceDetail = {
           />
           <PdfRow label="Fornecido por" value={pceDetail.abastecimento_fornecido_por || '-'} />
           <PdfRow label="Quantidade (L)" value={pceDetail.abastecimento_quantidade_litros ?? '-'} />
-          <PdfRow label="Horário chegada" value={formatTime(pceDetail.abastecimento_horario_chegada)} />
+          <PdfRow label="Horário" value={formatTime(pceDetail.abastecimento_horario_chegada)} />
         </PdfSection>
       )}
 
@@ -114,14 +145,14 @@ export const PCEDiaryView: React.FC<PCEDiaryViewProps> = ({ diary, pceDetail = {
         <PdfRow
           label="Geoteste"
           value={
-            <div className="flex flex-col gap-2">
-              <span className="text-[11px]">{diary.geotestSignature || '-'}</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-[8px]">{diary.geotestSignature || '-'}</span>
               {diary.geotestSignatureImage && (
-                <div className="h-16 flex items-center justify-center border border-gray-300 bg-white">
+                <div className="h-10 flex items-center justify-center border border-gray-300 bg-white">
                   <img
                     src={diary.geotestSignatureImage}
                     alt="Assinatura Geoteste"
-                    className="max-h-14 object-contain"
+                    className="max-h-8 object-contain"
                   />
                 </div>
               )}

@@ -6,6 +6,7 @@ export interface PCEPile {
   estacaProfundidadeM: string; // string para facilitar máscara/validação
   estacaTipo: string;
   estacaCargaTrabalhoTf: string;
+  estacaCargaEnsaioTf: string;
   estacaDiametroCm: string;
   confirmado?: boolean;
   isExpanded?: boolean;
@@ -71,6 +72,7 @@ export const PCEForm: React.FC<PCEFormProps> = ({ value, onChange }) => {
         estacaProfundidadeM: '',
         estacaTipo: '',
         estacaCargaTrabalhoTf: '',
+        estacaCargaEnsaioTf: '',
         estacaDiametroCm: '',
         confirmado: false,
         isExpanded: true
@@ -86,6 +88,7 @@ export const PCEForm: React.FC<PCEFormProps> = ({ value, onChange }) => {
                      pile.estacaProfundidadeM.trim() || 
                      pile.estacaTipo.trim() || 
                      pile.estacaCargaTrabalhoTf.trim() || 
+                     pile.estacaCargaEnsaioTf.trim() || 
                      pile.estacaDiametroCm.trim();
       
       if (hasData) {
@@ -110,6 +113,7 @@ export const PCEForm: React.FC<PCEFormProps> = ({ value, onChange }) => {
            !pile.estacaProfundidadeM.trim() && 
            !pile.estacaTipo.trim() && 
            !pile.estacaCargaTrabalhoTf.trim() && 
+           !pile.estacaCargaEnsaioTf.trim() && 
            !pile.estacaDiametroCm.trim();
   };
 
@@ -117,7 +121,7 @@ export const PCEForm: React.FC<PCEFormProps> = ({ value, onChange }) => {
     setField((d) => {
       d.piles.splice(index, 1);
       if (d.piles.length === 0) {
-        d.piles.push({ estacaNome: '', estacaProfundidadeM: '', estacaTipo: '', estacaCargaTrabalhoTf: '', estacaDiametroCm: '' });
+        d.piles.push({ estacaNome: '', estacaProfundidadeM: '', estacaTipo: '', estacaCargaTrabalhoTf: '', estacaCargaEnsaioTf: '', estacaDiametroCm: '' });
       }
     });
   };
@@ -191,7 +195,8 @@ export const PCEForm: React.FC<PCEFormProps> = ({ value, onChange }) => {
                         {[
                           pile.estacaTipo && `Tipo: ${pile.estacaTipo}`,
                           pile.estacaProfundidadeM && `Prof: ${pile.estacaProfundidadeM}m`,
-                          pile.estacaCargaTrabalhoTf && `Carga: ${pile.estacaCargaTrabalhoTf}tf`,
+                          pile.estacaCargaTrabalhoTf && `Carga trab: ${pile.estacaCargaTrabalhoTf}tf`,
+                          pile.estacaCargaEnsaioTf && `Carga ens: ${pile.estacaCargaEnsaioTf}tf`,
                           pile.estacaDiametroCm && `Ø: ${pile.estacaDiametroCm}cm`
                         ].filter(Boolean).join(' • ')}
                       </div>
@@ -277,17 +282,32 @@ export const PCEForm: React.FC<PCEFormProps> = ({ value, onChange }) => {
                     placeholder="Ex.: Hélice contínua"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Carga de trabalho (tf)</label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={pile.estacaCargaTrabalhoTf}
-                    onChange={(e) => updatePile(index, (p) => { p.estacaCargaTrabalhoTf = e.target.value; })}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Ex.: 40"
-                  />
-                </div>
+                {value.ensaioTipo === 'PCE HELICOIDAL' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Carga de trabalho (tf)</label>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={pile.estacaCargaTrabalhoTf}
+                        onChange={(e) => updatePile(index, (p) => { p.estacaCargaTrabalhoTf = e.target.value; })}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="Ex.: 40"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Carga de ensaio (tf)</label>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={pile.estacaCargaEnsaioTf}
+                        onChange={(e) => updatePile(index, (p) => { p.estacaCargaEnsaioTf = e.target.value; })}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="Ex.: 60"
+                      />
+                    </div>
+                  </>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Diâmetro (cm)</label>
                   <input
@@ -341,7 +361,9 @@ export const PCEForm: React.FC<PCEFormProps> = ({ value, onChange }) => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Célula</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                {value.ensaioTipo === 'PCE HELICOIDAL' ? 'Célula de carga' : 'Célula'}
+              </label>
               <input
                 type="text"
                 value={value.equipamentos.celula}

@@ -401,7 +401,6 @@ export const ClientsManagement: React.FC = () => {
                 onBlur={() => touchField('address')}
                 error={errors.address}
                 touched={touched.address}
-                required
                 rows={3}
               />
               

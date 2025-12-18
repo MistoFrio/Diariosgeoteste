@@ -56,7 +56,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
   const [pceData, setPceData] = useState<PCEFormData>({
     ensaioTipo: 'PCE CONVENCIONAL',
     piles: [
-      { estacaNome: '', estacaProfundidadeM: '', estacaTipo: '', estacaCargaTrabalhoTf: '', estacaDiametroCm: '', confirmado: false, isExpanded: true }
+      { estacaNome: '', estacaProfundidadeM: '', estacaTipo: '', estacaCargaTrabalhoTf: '', estacaCargaEnsaioTf: '', estacaDiametroCm: '', confirmado: false, isExpanded: true }
     ],
     carregamentoTipos: [],
     equipamentos: { macaco: '', celula: '', manometro: '', relogios: '', conjuntoVigas: '' },
@@ -393,6 +393,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
             estaca_profundidade_m: pile.estacaProfundidadeM || null,
             estaca_tipo: pile.estacaTipo || null,
             estaca_carga_trabalho_tf: pile.estacaCargaTrabalhoTf || null,
+            estaca_carga_ensaio_tf: pile.estacaCargaEnsaioTf || null,
             estaca_diametro_cm: pile.estacaDiametroCm || null,
           }));
 
@@ -405,6 +406,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
             estaca_profundidade_m: p.estaca_profundidade_m,
             estaca_tipo: p.estaca_tipo,
             estaca_carga_trabalho_tf: p.estaca_carga_trabalho_tf,
+            estaca_carga_ensaio_tf: p.estaca_carga_ensaio_tf,
             estaca_diametro_cm: p.estaca_diametro_cm,
           }));
 

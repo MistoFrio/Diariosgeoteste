@@ -299,6 +299,46 @@
     touch-action: manipulation;
   }
   
+  /* Estilos para Leaflet - prevenir sobreposição */
+  .leaflet-container {
+    position: relative !important;
+    z-index: 0 !important;
+    overflow: hidden !important;
+    max-height: 100% !important;
+  }
+  
+  .leaflet-map-pane,
+  .leaflet-tile-pane,
+  .leaflet-overlay-pane,
+  .leaflet-shadow-pane,
+  .leaflet-marker-pane,
+  .leaflet-tooltip-pane,
+  .leaflet-popup-pane {
+    position: absolute !important;
+    z-index: 0 !important;
+  }
+  
+  /* Garantir que o container do mapa contenha tudo */
+  .leaflet-container-wrapper {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  
+  /* Garantir que elementos do Leaflet não ultrapassem o container */
+  .leaflet-control-container {
+    z-index: 10 !important;
+  }
+  
+  .leaflet-popup {
+    z-index: 20 !important;
+  }
+  
+  /* Garantir que a barra de navegação fique acima de tudo */
+  nav[class*="fixed"][class*="bottom-0"] {
+    z-index: 50 !important;
+  }
+  
   /* Card mobile */
   .mobile-card {
     @apply bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800

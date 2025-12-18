@@ -436,7 +436,7 @@ export const DiariesList: React.FC<DiariesListProps> = ({ onNewDiary }) => {
           pileQueries.push(
             supabase
               .from('work_diaries_pce_piles')
-              .select('id, ordem, estaca_nome, estaca_profundidade_m, estaca_tipo, estaca_carga_trabalho_tf, estaca_diametro_cm')
+              .select('id, ordem, estaca_nome, estaca_profundidade_m, estaca_tipo, estaca_carga_trabalho_tf, estaca_carga_ensaio_tf, estaca_diametro_cm')
               .eq('pce_id', pce.id)
               .order('ordem', { ascending: true })
               .then(result => ({ type: 'pce', ...result }))
