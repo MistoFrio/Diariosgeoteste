@@ -2,7 +2,7 @@ type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 
 function getApiKey(): string {
   const key = (import.meta as any).env.VITE_GROQ_API_KEY as string | undefined;
-  if (!key) throw new Error('Defina VITE_GROQ_API_KEY no .env');
+  if (!key) throw new Error('Chave da API não configurada. Verifique as configurações do sistema.');
   return key;
 }
 

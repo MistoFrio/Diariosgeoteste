@@ -73,7 +73,7 @@ export const AgentAssistant: React.FC = () => {
         const result = await summarizeText(diaryText);
         setOutput(result);
       } catch (e: any) {
-        setOutput(e?.message || 'Falha ao processar');
+        setOutput('Não foi possível processar. Tente novamente.');
       } finally {
         setLoading(false);
       }
@@ -87,7 +87,7 @@ export const AgentAssistant: React.FC = () => {
         ]);
         setOutput(result);
       } catch (e: any) {
-        setOutput(e?.message || 'Falha ao processar');
+        setOutput('Não foi possível processar. Tente novamente.');
       } finally {
         setLoading(false);
       }

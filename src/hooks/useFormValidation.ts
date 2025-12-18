@@ -65,13 +65,13 @@ export const useFormValidation = (rules: ValidationRules) => {
       if (rule.email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(stringValue)) {
-          return 'Email inválido';
+          return 'Digite um email válido';
         }
       }
 
       // Pattern
       if (rule.pattern && !rule.pattern.test(stringValue)) {
-        return 'Formato inválido';
+        return 'Formato inválido. Verifique o campo e tente novamente';
       }
 
       // Custom validation

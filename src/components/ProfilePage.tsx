@@ -85,7 +85,7 @@ export const ProfilePage: React.FC = () => {
           if (savedUrl) {
             newSignatureUrl = savedUrl;
           } else {
-            throw new Error('Falha ao salvar assinatura');
+            throw new Error('Não foi possível salvar a assinatura');
           }
         }
       }
@@ -104,7 +104,7 @@ export const ProfilePage: React.FC = () => {
       setIsEditing(false);
     } catch (err: any) {
       console.error('Erro ao salvar assinatura:', err);
-      setMessage({ type: 'error', text: 'Erro ao salvar assinatura. Tente novamente.' });
+      setMessage({ type: 'error', text: 'Não foi possível salvar a assinatura. Tente novamente.' });
     } finally {
       setSaving(false);
     }
@@ -148,12 +148,12 @@ export const ProfilePage: React.FC = () => {
 
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      toast.error('Formato inválido. Use JPG, PNG ou WEBP');
+      toast.error('Formato de arquivo não suportado. Use apenas imagens JPG, PNG ou WEBP.');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Arquivo muito grande. Tamanho máximo: 5MB');
+      toast.error('Arquivo muito grande. O tamanho máximo permitido é 5MB.');
       return;
     }
 
@@ -190,7 +190,7 @@ export const ProfilePage: React.FC = () => {
       if (photoFile) {
         const uploadedUrl = await uploadCollaboratorPhoto(photoFile, user.id);
         if (!uploadedUrl) {
-          throw new Error('Erro ao fazer upload da foto');
+          throw new Error('Não foi possível enviar a foto');
         }
         newPhotoUrl = uploadedUrl;
 
@@ -219,8 +219,8 @@ export const ProfilePage: React.FC = () => {
       setMessage({ type: 'success', text: 'Foto atualizada com sucesso!' });
     } catch (err: any) {
       console.error('Erro ao salvar foto:', err);
-      toast.error(err.message || 'Erro ao salvar foto');
-      setMessage({ type: 'error', text: 'Erro ao salvar foto. Tente novamente.' });
+      toast.error('Não foi possível salvar a foto. Tente novamente.');
+      setMessage({ type: 'error', text: 'Não foi possível salvar a foto. Tente novamente.' });
     } finally {
       setUploadingPhoto(false);
     }

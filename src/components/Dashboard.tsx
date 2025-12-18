@@ -141,7 +141,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onPageChange }) => {
         setActivities(formattedActivities);
       } catch (err: any) {
         console.error('Erro ao buscar dados do dashboard:', err);
-        setError(err.message || 'Erro ao carregar dados do dashboard');
+        setError('Não foi possível carregar os dados. Tente novamente.');
       } finally {
         setLoading(false);
       }

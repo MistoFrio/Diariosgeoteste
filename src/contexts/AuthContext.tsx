@@ -176,7 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (msg.includes('user not found')) {
       return { ok: false, code: 'user_not_found', message: 'Usuário não encontrado. Crie uma conta primeiro.' };
     }
-    return { ok: false, code: 'unknown', message: (error as any).message || 'Erro ao entrar. Verifique suas credenciais.' };
+    return { ok: false, code: 'unknown', message: 'Não foi possível fazer login. Verifique suas credenciais e tente novamente.' };
   };
 
   const register: AuthContextType['register'] = async (name, email, password) => {
@@ -187,7 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!isSupabaseConfigured) {
       const exists = users.some(u => u.email.toLowerCase() === email.toLowerCase());
       if (exists) {
-        return { ok: false, message: 'Email já cadastrado' };
+        return { ok: false, message: 'Este email já está cadastrado' };
       }
       // Criar usuário (papel padrão: user)
       const newUser: User = {
@@ -251,7 +251,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   return context;
 };

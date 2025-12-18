@@ -45,6 +45,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
   const [enderecoDetalhado, setEnderecoDetalhado] = useState({
     estadoId: 0,
     cidadeId: 0,
+    cidadeNomeLivre: '',
     rua: '',
     numero: ''
   });
@@ -55,7 +56,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
   const [pceData, setPceData] = useState<PCEFormData>({
     ensaioTipo: 'PCE CONVENCIONAL',
     piles: [
-      { estacaNome: '', estacaProfundidadeM: '', estacaTipo: '', estacaCargaTrabalhoTf: '', estacaDiametroCm: '' }
+      { estacaNome: '', estacaProfundidadeM: '', estacaTipo: '', estacaCargaTrabalhoTf: '', estacaDiametroCm: '', confirmado: false, isExpanded: true }
     ],
     carregamentoTipos: [],
     equipamentos: { macaco: '', celula: '', manometro: '', relogios: '', conjuntoVigas: '' },
@@ -74,7 +75,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
   const [pitData, setPitData] = useState<PITFormData>({
     equipamento: '',
     piles: [
-      { estacaNome: '', estacaTipo: '', diametroCm: '', profundidadeCm: '', arrasamentoM: '', comprimentoUtilM: '' }
+      { estacaNome: '', estacaTipo: '', diametroCm: '', profundidadeCm: '', arrasamentoM: '', comprimentoUtilM: '', confirmado: false, isExpanded: true }
     ],
     ocorrencias: '',
     totalEstacas: ''
@@ -120,7 +121,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
 
   const [pdaDiaryData, setPdaDiaryData] = useState<PDADiaryFormData>({
     pdaComputadores: [],
-    piles: [{ nome: '', tipo: '', diametroCm: '', profundidadeM: '', cargaTrabalhoTf: '', cargaEnsaioTf: '' }],
+    piles: [{ nome: '', tipo: '', diametroCm: '', profundidadeM: '', cargaTrabalhoTf: '', cargaEnsaioTf: '', confirmado: false, isExpanded: true }],
     ocorrencias: '',
     abastecimento: {
       equipamentos: [],
@@ -268,29 +269,39 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
       }
 
       if (!user?.id) {
-        setError('Usuário não autenticado. Faça login novamente.');
+        setError('Sessão expirada. Faça login novamente.');
         setIsSubmitting(false);
         return;
       }
 
       // Validar endereço detalhado obrigatório
-      if (!enderecoDetalhado.estadoId || !enderecoDetalhado.cidadeId || !enderecoDetalhado.rua.trim() || !enderecoDetalhado.numero.trim()) {
-        setError('Por favor, preencha todos os campos do endereço (Estado, Cidade, Rua e Número)');
+      const hasCidadeSelecionada = enderecoDetalhado.cidadeId > 0;
+      const hasCidadeDigitada = enderecoDetalhado.cidadeNomeLivre.trim().length > 0;
+      if (
+        !enderecoDetalhado.estadoId ||
+        (!hasCidadeSelecionada && !hasCidadeDigitada) ||
+        !enderecoDetalhado.rua.trim() ||
+        !enderecoDetalhado.numero.trim()
+      ) {
+        setError('Preencha todos os campos do endereço: Estado, Cidade, Rua e Número');
         setIsSubmitting(false);
         return;
       }
 
       // Montar endereço completo a partir do endereço detalhado
       const estado = getEstadoById(enderecoDetalhado.estadoId);
-      const cidade = getCidadeById(enderecoDetalhado.estadoId, enderecoDetalhado.cidadeId);
+      const cidadeSelecionada = hasCidadeSelecionada
+        ? getCidadeById(enderecoDetalhado.estadoId, enderecoDetalhado.cidadeId)
+        : null;
+      const cidadeNome = cidadeSelecionada?.nome || enderecoDetalhado.cidadeNomeLivre.trim();
       
-      if (!estado || !cidade) {
-        setError('Estado ou cidade inválidos');
+      if (!estado || !cidadeNome) {
+        setError('Estado ou cidade inválidos. Verifique os dados informados.');
         setIsSubmitting(false);
         return;
       }
 
-      const enderecoCompleto = `${enderecoDetalhado.rua.trim()}, ${enderecoDetalhado.numero.trim()}, ${cidade.nome}, ${estado.nome}`;
+      const enderecoCompleto = `${enderecoDetalhado.rua.trim()}, ${enderecoDetalhado.numero.trim()}, ${cidadeNome}, ${estado.nome}`;
 
       const payload: any = {
         user_id: user.id,
@@ -300,8 +311,8 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
         endereco_detalhado: enderecoDetalhado.estadoId > 0 ? {
           estado_id: enderecoDetalhado.estadoId,
           estado_nome: getEstadoById(enderecoDetalhado.estadoId)?.nome || '',
-          cidade_id: enderecoDetalhado.cidadeId,
-          cidade_nome: getCidadeById(enderecoDetalhado.estadoId, enderecoDetalhado.cidadeId)?.nome || '',
+          cidade_id: enderecoDetalhado.cidadeId > 0 ? enderecoDetalhado.cidadeId : null,
+          cidade_nome: cidadeNome,
           rua: enderecoDetalhado.rua.trim(),
           numero: enderecoDetalhado.numero.trim()
         } : null,
@@ -312,7 +323,8 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
         services_executed: formData.servicesExecuted.trim(),
         geotest_signature: user.name || null,
         geotest_signature_url: formData.geotestSignatureImage || null,
-        responsible_signature: null,
+        // Assinatura do responsável é coletada externamente (GOV.BR)
+        responsible_signature: 'Assinatura externa (GOV.BR)',
         observations: formData.observations.trim() || null,
       };
 
@@ -329,7 +341,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
         .select('id')
         .single();
       if (insertError) {
-        setError(insertError.message);
+        setError('Não foi possível salvar o diário. Tente novamente.');
         setIsSubmitting(false);
         return;
       }
@@ -366,7 +378,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
           .select('id')
           .single();
         if (pceError) {
-          setError(pceError.message);
+          setError('Erro ao salvar dados do PCE. Tente novamente.');
           setIsSubmitting(false);
           return;
         }
@@ -400,7 +412,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
             .from('work_diaries_pce_piles')
             .insert(mapped);
           if (pilesError) {
-            setError(pilesError.message);
+            setError('Erro ao salvar estacas. Tente novamente.');
             setIsSubmitting(false);
             return;
           }
@@ -422,7 +434,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
           .select('id')
           .single();
         if (pitError) {
-          setError(pitError.message);
+          setError('Erro ao salvar dados do PIT. Tente novamente.');
           setIsSubmitting(false);
           return;
         }
@@ -444,7 +456,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
             .from('work_diaries_pit_piles')
             .insert(piles);
           if (pitPilesError) {
-            setError(pitPilesError.message);
+            setError('Erro ao salvar estacas do PIT. Tente novamente.');
             setIsSubmitting(false);
             return;
           }
@@ -470,7 +482,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
           .select('id')
           .single();
         if (placaError) {
-          setError(placaError.message);
+          setError('Erro ao salvar dados da Placa. Tente novamente.');
           setIsSubmitting(false);
           return;
         }
@@ -489,7 +501,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
             .from('work_diaries_placa_piles')
             .insert(testPoints);
           if (testPointsError) {
-            setError(testPointsError.message);
+            setError('Erro ao salvar pontos de ensaio. Tente novamente.');
             setIsSubmitting(false);
             return;
           }
@@ -532,7 +544,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
           .from('fichapda')
           .insert(pdaPayload);
         if (pdaError) {
-          setError(pdaError.message);
+          setError('Erro ao salvar dados do PDA. Tente novamente.');
           setIsSubmitting(false);
           return;
         }
@@ -568,7 +580,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
           .select('id')
           .single();
         if (diarioError) {
-          setError(diarioError.message);
+          setError('Erro ao salvar diário PDA. Tente novamente.');
           setIsSubmitting(false);
           return;
         }
@@ -593,7 +605,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
             .from('work_diaries_pda_diario_piles')
             .insert(rows);
           if (pilesError) {
-            setError(pilesError.message);
+            setError('Erro ao salvar estacas do PDA. Tente novamente.');
             setIsSubmitting(false);
             return;
           }
@@ -604,7 +616,7 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
       setIsSubmitting(false);
       onBack();
     } catch (err: any) {
-      setError('Não foi possível salvar o diário.');
+      setError('Erro inesperado ao salvar o diário. Tente novamente.');
       setIsSubmitting(false);
     }
   };
@@ -617,11 +629,12 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
   };
 
   const handleEstadoChange = (estadoId: number) => {
-    setEnderecoDetalhado(prev => ({
-      ...prev,
-      estadoId,
-      cidadeId: 0 // Reset cidade quando muda estado
-    }));
+      setEnderecoDetalhado(prev => ({
+        ...prev,
+        estadoId,
+        cidadeId: 0, // Reset cidade quando muda estado
+        cidadeNomeLivre: ''
+      }));
     
     if (estadoId > 0) {
       const cidadesDoEstado = getCidadesByEstado(estadoId);
@@ -661,9 +674,10 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
     if (section === 'saida') return Boolean(formData.endTime);
     if (section === 'equipe') return selectedTeamMembers.length > 0 || Boolean(formData.team?.trim());
     if (section === 'endereco') {
+      const hasCidade = enderecoDetalhado.cidadeId > 0 || enderecoDetalhado.cidadeNomeLivre.trim().length > 0;
       return Boolean(
         enderecoDetalhado.estadoId &&
-          enderecoDetalhado.cidadeId &&
+          hasCidade &&
           enderecoDetalhado.rua.trim() &&
           enderecoDetalhado.numero.trim()
       );
@@ -1026,21 +1040,36 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Cidade *</label>
-                  <select
-                    value={enderecoDetalhado.cidadeId}
-                    onChange={(e) => handleEnderecoChange('cidadeId', Number(e.target.value))}
-                    disabled={enderecoDetalhado.estadoId === 0}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value={0}>Selecione a cidade</option>
-                    {cidades.map((cidade) => (
-                      <option key={cidade.id} value={cidade.id}>
-                        {cidade.nome}
-                      </option>
-                    ))}
-                  </select>
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Cidade (selecione ou digite) *</label>
+                    <select
+                      value={enderecoDetalhado.cidadeId}
+                      onChange={(e) => handleEnderecoChange('cidadeId', Number(e.target.value))}
+                      disabled={enderecoDetalhado.estadoId === 0}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value={0}>Selecione a cidade</option>
+                      {cidades.map((cidade) => (
+                        <option key={cidade.id} value={cidade.id}>
+                          {cidade.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Ou digite a cidade</label>
+                    <input
+                      type="text"
+                      value={enderecoDetalhado.cidadeNomeLivre}
+                      onChange={(e) => handleEnderecoChange('cidadeNomeLivre', e.target.value)}
+                      placeholder="Ex: Ouro Preto"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                    />
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                      Pode escolher na lista ou apenas digitar; um dos dois é suficiente.
+                    </p>
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="col-span-2">

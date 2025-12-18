@@ -15,11 +15,10 @@ export const GenericDiaryView: React.FC<GenericDiaryViewProps> = ({ diary }) => 
         <PdfRow label="Data" value={formatDate(diary.date)} />
         <PdfRow label="Equipamento" value={diary.equipment || '-'} />
         <PdfRow label="Endereço" value={diary.address} span={2} />
-        <PdfRow label="Nº da obra" value={diary.workNumber || '-'} />
-        <PdfRow label="Obra" value={diary.projectName || '-'} />
-        <PdfRow label="Horário início" value={diary.startTime || '-'} span={1} />
-        <PdfRow label="Horário término" value={diary.endTime || '-'} span={1} />
+        <PdfRow label="Horário de início" value={diary.startTime || '-'} span={1} />
+        <PdfRow label="Horário de término" value={diary.endTime || '-'} span={1} />
         <PdfRow label="Equipe" value={diary.team} span={4} />
+        <PdfRow label="Obra" value={diary.projectName || '-'} />
       </PdfSection>
 
       <PdfSection columns={3} title="Clima">

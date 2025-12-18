@@ -1,4 +1,5 @@
 import React from 'react';
+import { Edit, Check } from 'lucide-react';
 
 export interface PITPile {
   estacaNome: string;
@@ -7,6 +8,8 @@ export interface PITPile {
   profundidadeCm: string;
   arrasamentoM: string;
   comprimentoUtilM: string;
+  confirmado?: boolean;
+  isExpanded?: boolean;
 }
 
 export interface PITFormData {
@@ -41,9 +44,47 @@ export const PITForm: React.FC<PITFormProps> = ({ value, onChange }) => {
         diametroCm: '',
         profundidadeCm: '',
         arrasamentoM: '',
-        comprimentoUtilM: ''
+        comprimentoUtilM: '',
+        confirmado: false,
+        isExpanded: true
       });
     });
+  };
+
+  const confirmPile = (index: number) => {
+    setField((d) => {
+      const pile = d.piles[index];
+      const hasData = pile.estacaNome.trim() || 
+                     pile.estacaTipo.trim() || 
+                     pile.diametroCm.trim() || 
+                     pile.profundidadeCm.trim() || 
+                     pile.arrasamentoM.trim() || 
+                     pile.comprimentoUtilM.trim();
+      
+      if (hasData) {
+        pile.confirmado = true;
+        pile.isExpanded = false;
+        
+        // Move estaca confirmada para o final
+        const confirmedPile = d.piles.splice(index, 1)[0];
+        d.piles.push(confirmedPile);
+      }
+    });
+  };
+
+  const toggleExpandPile = (index: number) => {
+    setField((d) => {
+      d.piles[index].isExpanded = !d.piles[index].isExpanded;
+    });
+  };
+
+  const isPileEmpty = (pile: PITPile) => {
+    return !pile.estacaNome.trim() && 
+           !pile.estacaTipo.trim() && 
+           !pile.diametroCm.trim() && 
+           !pile.profundidadeCm.trim() && 
+           !pile.arrasamentoM.trim() && 
+           !pile.comprimentoUtilM.trim();
   };
 
   const removePile = (index: number) => {
@@ -101,19 +142,82 @@ export const PITForm: React.FC<PITFormProps> = ({ value, onChange }) => {
             </button>
           </div>
 
-          {value.piles.map((pile, index) => (
-            <div key={index} className="mb-4 sm:mb-6 border border-gray-200 dark:border-gray-800 rounded-lg p-3 sm:p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm text-gray-700 dark:text-gray-200 font-medium">{pile.estacaNome?.trim() || 'Estaca'}</p>
-                <button
-                  type="button"
-                  onClick={() => removePile(index)}
-                  className="text-red-600 hover:text-red-700 text-xs sm:text-sm font-medium"
-                >
-                  Remover
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          {value.piles.map((pile, index) => {
+            const isEmpty = isPileEmpty(pile);
+            const isConfirmed = pile.confirmado === true;
+            const isExpanded = pile.isExpanded !== false || isEmpty;
+            
+            // Estaca compilada (confirmada e não expandida)
+            if (isConfirmed && !isExpanded) {
+              return (
+                <div key={index} className="mb-3 border border-gray-200 dark:border-gray-800 rounded-lg p-3 bg-gray-50 dark:bg-gray-800/50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {pile.estacaNome?.trim() || 'Estaca sem nome'}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                        {[
+                          pile.estacaTipo && `Tipo: ${pile.estacaTipo}`,
+                          pile.diametroCm && `Ø: ${pile.diametroCm}cm`,
+                          pile.profundidadeCm && `Prof: ${pile.profundidadeCm}cm`,
+                          pile.comprimentoUtilM && `Comp: ${pile.comprimentoUtilM}m`
+                        ].filter(Boolean).join(' • ')}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleExpandPile(index)}
+                        className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        title="Editar estaca"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removePile(index)}
+                        className="text-red-600 hover:text-red-700 text-xs sm:text-sm font-medium"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // Estaca expandida (em edição)
+            return (
+              <div key={index} className="mb-4 sm:mb-6 border border-gray-200 dark:border-gray-800 rounded-lg p-3 sm:p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm text-gray-700 dark:text-gray-200 font-medium">
+                    {pile.estacaNome?.trim() || 'Nova Estaca'}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {!isEmpty && !isConfirmed && (
+                      <button
+                        type="button"
+                        onClick={() => confirmPile(index)}
+                        className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-1"
+                      >
+                        <Check className="w-3 h-3" />
+                        Confirmar
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removePile(index)}
+                      className="text-red-600 hover:text-red-700 text-xs sm:text-sm font-medium"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Nome da estaca</label>
                   <input
@@ -180,7 +284,8 @@ export const PITForm: React.FC<PITFormProps> = ({ value, onChange }) => {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {divider}

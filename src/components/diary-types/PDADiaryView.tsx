@@ -34,9 +34,8 @@ export const PDADiaryView: React.FC<PDADiaryViewProps> = ({
         <PdfRow label="Data" value={formatDate(diary.date)} />
         <PdfRow label="Equipamento" value={fichapdaDetail?.equipamento || diary.equipment || '-'} />
         <PdfRow label="Endereço" value={diary.address} span={2} />
-        <PdfRow label="Nº da obra" value={diary.workNumber || '-'} />
-        <PdfRow label="Horário início" value={diary.startTime || '-'} span={1} />
-        <PdfRow label="Horário término" value={diary.endTime || '-'} span={1} />
+        <PdfRow label="Horário de início" value={diary.startTime || '-'} span={1} />
+        <PdfRow label="Horário de término" value={diary.endTime || '-'} span={1} />
         <PdfRow label="Equipe" value={diary.team} span={4} />
       </PdfSection>
 

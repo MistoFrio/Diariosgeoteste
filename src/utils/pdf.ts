@@ -160,7 +160,7 @@ export async function exportElementToPDF(
 
     const pageContext = pageCanvas.getContext('2d');
     if (!pageContext) {
-      throw new Error('Não foi possível criar o contexto do canvas para o PDF.');
+      throw new Error('Erro ao gerar o PDF. Tente novamente.');
     }
 
     // Recorta a parte correspondente da página

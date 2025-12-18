@@ -206,7 +206,7 @@ export const DiariesList: React.FC<DiariesListProps> = ({ onNewDiary }) => {
       downloadExcel(fileName, excelRows);
     } catch (err: any) {
       console.error('Erro ao exportar:', err);
-      setError('Erro ao exportar diários: ' + err.message);
+      setError('Não foi possível exportar os diários. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -340,7 +340,7 @@ export const DiariesList: React.FC<DiariesListProps> = ({ onNewDiary }) => {
 
         setRows(mapped);
       } catch (err: any) {
-        setError('Não foi possível carregar os diários.');
+        setError('Não foi possível carregar os diários. Verifique sua conexão e tente novamente.');
       } finally {
         setLoading(false);
       }

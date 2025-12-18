@@ -51,9 +51,9 @@ export const ClientsManagement: React.FC = () => {
 
   const { errors, touched, validateForm, touchField, handleFieldValidation, resetValidation } = useFormValidation({
     name: { required: true, minLength: 3, maxLength: 100 },
-    email: { required: true, email: true },
-    phone: { required: true, minLength: 10 },
-    address: { required: true, minLength: 10 }
+    email: { required: false, email: true },
+    phone: { required: false, minLength: 10 },
+    address: { required: false, minLength: 10 }
   });
 
   const filteredClients = clients.filter(client =>
@@ -84,7 +84,7 @@ export const ClientsManagement: React.FC = () => {
       if (error) throw error;
       setClients((data || []).map(mapRowToClient));
     } catch (err: any) {
-      toast.error('Erro ao carregar clientes');
+      toast.error('Não foi possível carregar os clientes. Tente novamente.');
       setClients([]);
     } finally {
       setLoading(false);
@@ -132,7 +132,7 @@ export const ClientsManagement: React.FC = () => {
     e.preventDefault();
     // Validar formulário
     if (!validateForm(formData)) {
-      toast.error('Por favor, corrija os erros no formulário');
+      toast.error('Corrija os erros no formulário antes de continuar.');
       return;
     }
 
@@ -157,9 +157,9 @@ export const ClientsManagement: React.FC = () => {
           .from('clients')
           .update({
             name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            address: formData.address,
+            email: formData.email.trim() || null,
+            phone: formData.phone.trim() || null,
+            address: formData.address.trim() || null,
           })
           .eq('id', editingClient.id)
           .select('*')
@@ -175,9 +175,9 @@ export const ClientsManagement: React.FC = () => {
           .from('clients')
           .insert({
             name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            address: formData.address,
+            email: formData.email.trim() || null,
+            phone: formData.phone.trim() || null,
+            address: formData.address.trim() || null,
           })
           .select('*')
           .single();
@@ -190,7 +190,7 @@ export const ClientsManagement: React.FC = () => {
       }
       handleCloseModal();
     } catch (err: any) {
-      toast.error('Erro ao salvar cliente');
+      toast.error('Não foi possível salvar o cliente. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -218,7 +218,7 @@ export const ClientsManagement: React.FC = () => {
       setClients(prev => prev.filter(client => client.id !== clientId));
       toast.success('Cliente excluído com sucesso!');
     } catch (err: any) {
-      toast.error('Erro ao excluir cliente');
+      toast.error('Não foi possível excluir o cliente. Tente novamente.');
     } finally {
       setLoading(false);
       setConfirmDialog({ isOpen: false, clientId: null, clientName: null });
@@ -298,18 +298,24 @@ export const ClientsManagement: React.FC = () => {
               </div>
               
               <div className="space-y-1.5 sm:space-y-2">
-                <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-                  <Mail className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-400 flex-shrink-0" />
-                  <span className="truncate">{client.email}</span>
-                </div>
-                <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-                  <Phone className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-400 flex-shrink-0" />
-                  <span className="truncate">{client.phone}</span>
-                </div>
-                <div className="flex items-start text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-                  <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-400 mt-0.5 flex-shrink-0" />
-                  <span className="line-clamp-2 break-words">{client.address}</span>
-                </div>
+                {client.email && (
+                  <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                    <Mail className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-400 flex-shrink-0" />
+                    <span className="truncate">{client.email}</span>
+                  </div>
+                )}
+                {client.phone && (
+                  <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                    <Phone className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-400 flex-shrink-0" />
+                    <span className="truncate">{client.phone}</span>
+                  </div>
+                )}
+                {client.address && (
+                  <div className="flex items-start text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                    <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <span className="line-clamp-2 break-words">{client.address}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -369,7 +375,6 @@ export const ClientsManagement: React.FC = () => {
                 onBlur={() => touchField('email')}
                 error={errors.email}
                 touched={touched.email}
-                required
               />
               
               <FormInput
@@ -383,7 +388,6 @@ export const ClientsManagement: React.FC = () => {
                 onBlur={() => touchField('phone')}
                 error={errors.phone}
                 touched={touched.phone}
-                required
                 placeholder="(00) 00000-0000"
               />
               

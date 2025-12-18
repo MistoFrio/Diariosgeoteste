@@ -104,7 +104,7 @@ export const UsersManagement: React.FC = () => {
         setUsers(mappedUsers);
       } catch (err: any) {
         console.error('Erro ao buscar usuários:', err);
-        setError(err.message || 'Erro ao carregar usuários');
+        setError('Não foi possível carregar os usuários. Tente novamente.');
         setUsers(mockUsers); // Fallback para dados mock
       } finally {
         setLoading(false);
@@ -174,12 +174,12 @@ export const UsersManagement: React.FC = () => {
 
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      toast.error('Formato inválido. Use JPG, PNG ou WEBP');
+      toast.error('Formato de arquivo não suportado. Use apenas imagens JPG, PNG ou WEBP.');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Arquivo muito grande. Tamanho máximo: 5MB');
+      toast.error('Arquivo muito grande. O tamanho máximo permitido é 5MB.');
       return;
     }
 
@@ -235,7 +235,7 @@ export const UsersManagement: React.FC = () => {
         try {
           photoUrl = await uploadCollaboratorPhoto(photoFile, userId);
           if (!photoUrl) {
-            toast.error('Erro ao fazer upload da foto');
+            toast.error('Não foi possível enviar a foto. Tente novamente.');
             setUploadingPhoto(false);
             return;
           }
@@ -245,7 +245,7 @@ export const UsersManagement: React.FC = () => {
             await deleteOldCollaboratorPhoto(editingUser.photoUrl);
           }
         } catch (err: any) {
-          toast.error(err.message || 'Erro ao fazer upload da foto');
+          toast.error('Não foi possível enviar a foto. Tente novamente.');
           setUploadingPhoto(false);
           return;
         } finally {
@@ -374,8 +374,8 @@ export const UsersManagement: React.FC = () => {
       handleCloseModal();
     } catch (err: any) {
       console.error('Erro ao salvar usuário:', err);
-      setError(err.message || 'Erro ao salvar usuário');
-      toast.error(err.message || 'Erro ao salvar usuário');
+      setError('Não foi possível salvar o usuário. Tente novamente.');
+      toast.error('Não foi possível salvar o usuário. Tente novamente.');
     } finally {
       setSubmitting(false);
     }
@@ -416,8 +416,8 @@ export const UsersManagement: React.FC = () => {
       toast.success('Usuário excluído com sucesso!');
     } catch (err: any) {
       console.error('Erro ao deletar usuário:', err);
-      setError(err.message || 'Erro ao deletar usuário');
-      toast.error(err.message || 'Erro ao deletar usuário');
+      setError('Não foi possível excluir o usuário. Tente novamente.');
+      toast.error('Não foi possível excluir o usuário. Tente novamente.');
     } finally {
       setConfirmDialog({ isOpen: false, userId: null, userName: null });
     }

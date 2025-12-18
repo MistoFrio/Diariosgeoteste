@@ -9,6 +9,16 @@ interface PCEDiaryViewProps {
 
 const formatDate = (value?: string) => (value ? new Date(value).toLocaleDateString('pt-BR') : '');
 
+const formatTime = (value?: string) => {
+  if (!value) return '-';
+  // Se vier no formato "HH:MM:SS", pegar apenas "HH:MM"
+  if (value.includes(':')) {
+    const parts = value.split(':');
+    return `${parts[0]}:${parts[1]}`;
+  }
+  return value;
+};
+
 export const PCEDiaryView: React.FC<PCEDiaryViewProps> = ({ diary, pceDetail = {}, pcePiles = [] }) => {
   return (
     <PdfLayout diary={diary} title="DIÁRIO DE OBRA • PCE">
@@ -17,9 +27,8 @@ export const PCEDiaryView: React.FC<PCEDiaryViewProps> = ({ diary, pceDetail = {
         <PdfRow label="Data" value={formatDate(diary.date)} />
         <PdfRow label="Equipamento" value={pceDetail.equipamento || diary.equipment || '-'} />
         <PdfRow label="Endereço" value={diary.address} span={2} />
-        <PdfRow label="Nº da obra" value={diary.workNumber || '-'} />
-        <PdfRow label="Horário início" value={diary.startTime || '-'} span={1} />
-        <PdfRow label="Horário término" value={diary.endTime || '-'} span={1} />
+        <PdfRow label="Horário de início" value={diary.startTime || '-'} span={1} />
+        <PdfRow label="Horário de término" value={diary.endTime || '-'} span={1} />
         <PdfRow label="Equipe" value={diary.team} span={4} />
       </PdfSection>
 
@@ -69,6 +78,37 @@ export const PCEDiaryView: React.FC<PCEDiaryViewProps> = ({ diary, pceDetail = {
       <PdfSection title="Ocorrências">
         <PdfRow label="Descrição" value={pceDetail.ocorrencias || diary.observations || '-'} span={3} />
       </PdfSection>
+
+      {/* Equipamento de cravação - Apenas para PCE HELICOIDAL */}
+      {pceDetail.ensaio_tipo === 'PCE HELICOIDAL' && (
+        <PdfSection columns={3} title="Equipamento de cravação">
+          <PdfRow label="Equipamento" value={pceDetail.cravacao_equipamento || '-'} span={2} />
+          <PdfRow label="Horímetro" value={pceDetail.cravacao_horimetro || '-'} />
+        </PdfSection>
+      )}
+
+      {/* Abastecimento - Apenas para PCE HELICOIDAL */}
+      {pceDetail.ensaio_tipo === 'PCE HELICOIDAL' && (
+        <PdfSection columns={4} title="Abastecimento">
+          <PdfRow label="Mobilização tanque (L)" value={pceDetail.abastecimento_mobilizacao_litros_tanque ?? '-'} />
+          <PdfRow label="Mobilização galão (L)" value={pceDetail.abastecimento_mobilizacao_litros_galao ?? '-'} />
+          <PdfRow label="Final do dia tanque (L)" value={pceDetail.abastecimento_finaldia_litros_tanque ?? '-'} />
+          <PdfRow label="Final do dia galão (L)" value={pceDetail.abastecimento_finaldia_litros_galao ?? '-'} />
+          <PdfRow
+            label="Chegou diesel?"
+            value={
+              <div className="flex gap-4">
+                <PdfValue label="Sim" checked={pceDetail.abastecimento_chegou_diesel === true} />
+                <PdfValue label="Não" checked={pceDetail.abastecimento_chegou_diesel === false} />
+              </div>
+            }
+            span={2}
+          />
+          <PdfRow label="Fornecido por" value={pceDetail.abastecimento_fornecido_por || '-'} />
+          <PdfRow label="Quantidade (L)" value={pceDetail.abastecimento_quantidade_litros ?? '-'} />
+          <PdfRow label="Horário chegada" value={formatTime(pceDetail.abastecimento_horario_chegada)} />
+        </PdfSection>
+      )}
 
       <PdfSection title="Assinaturas" columns={2}>
         <PdfRow

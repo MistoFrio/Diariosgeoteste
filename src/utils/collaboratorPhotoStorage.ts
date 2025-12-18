@@ -66,13 +66,13 @@ export const uploadCollaboratorPhoto = async (
     // Validar tipo de arquivo
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      throw new Error('Formato de arquivo não suportado. Use JPG, PNG ou WEBP');
+      throw new Error('Formato de arquivo não suportado. Use apenas imagens JPG, PNG ou WEBP.');
     }
     
     // Validar tamanho (máximo 5MB antes da compressão)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      throw new Error('Arquivo muito grande. Tamanho máximo: 5MB');
+      throw new Error('Arquivo muito grande. O tamanho máximo permitido é 5MB.');
     }
     
     // Comprimir a imagem
@@ -96,7 +96,7 @@ export const uploadCollaboratorPhoto = async (
       
       // Mensagem mais amigável para erro de bucket não encontrado
       if (error.message?.includes('not found') || error.message?.includes('Bucket not found')) {
-        throw new Error('Bucket de fotos não encontrado. Por favor, crie o bucket "collaborator-photos" no Storage do Supabase primeiro.');
+        throw new Error('Configuração de armazenamento não encontrada. Entre em contato com o suporte técnico.');
       }
       
       throw error;

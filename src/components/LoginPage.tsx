@@ -24,24 +24,24 @@ export const LoginPage: React.FC = () => {
 
     if (isSignUp) {
       if (!name.trim()) {
-        setError('Informe seu nome');
+        setError('Digite seu nome completo');
         setIsLoading(false);
         return;
       }
       if (password.length < 6) {
-        setError('A senha deve ter pelo menos 6 caracteres');
+        setError('A senha deve ter no mínimo 6 caracteres');
         setIsLoading(false);
         return;
       }
       if (password !== confirmPassword) {
-        setError('As senhas não conferem');
+        setError('As senhas não são iguais');
         setIsLoading(false);
         return;
       }
       const result = await register(name, email, password);
       if (!result.ok) {
-        setError(result.message || 'Não foi possível criar a conta');
-        setToast({ type: 'error', message: result.message || 'Não foi possível criar a conta' });
+        setError(result.message || 'Não foi possível criar a conta. Tente novamente.');
+        setToast({ type: 'error', message: result.message || 'Não foi possível criar a conta. Tente novamente.' });
         setIsLoading(false);
         return;
       }
@@ -56,7 +56,7 @@ export const LoginPage: React.FC = () => {
 
     const result = await login(email, password);
     if (!result.ok) {
-      const message = result.message || 'Não foi possível entrar';
+      const message = result.message || 'Não foi possível fazer login. Verifique suas credenciais.';
       setError(message);
       setToast({ type: 'error', message });
     } else {

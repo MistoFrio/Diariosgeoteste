@@ -98,7 +98,7 @@ export const CollaboratorsManagement: React.FC = () => {
       if (error) throw error;
       setCollaborators((data || []).map(mapRowToCollaborator));
     } catch (err: any) {
-      toast.error('Erro ao carregar colaboradores');
+      toast.error('Não foi possível carregar os colaboradores. Tente novamente.');
       setCollaborators([]);
     } finally {
       setLoading(false);
@@ -158,13 +158,13 @@ export const CollaboratorsManagement: React.FC = () => {
     // Validar tipo
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      toast.error('Formato inválido. Use JPG, PNG ou WEBP');
+      toast.error('Formato de arquivo não suportado. Use apenas imagens JPG, PNG ou WEBP.');
       return;
     }
 
     // Validar tamanho (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Arquivo muito grande. Tamanho máximo: 5MB');
+      toast.error('Arquivo muito grande. O tamanho máximo permitido é 5MB.');
       return;
     }
 
@@ -185,7 +185,7 @@ export const CollaboratorsManagement: React.FC = () => {
     e.preventDefault();
     
     if (!validateForm(formData)) {
-      toast.error('Por favor, corrija os erros no formulário');
+      toast.error('Corrija os erros no formulário antes de continuar.');
       return;
     }
 
@@ -225,7 +225,7 @@ export const CollaboratorsManagement: React.FC = () => {
         try {
           photoUrl = await uploadCollaboratorPhoto(photoFile, collaboratorId);
           if (!photoUrl) {
-            toast.error('Erro ao fazer upload da foto');
+            toast.error('Não foi possível enviar a foto. Tente novamente.');
             return;
           }
           
@@ -234,7 +234,7 @@ export const CollaboratorsManagement: React.FC = () => {
             await deleteOldCollaboratorPhoto(editingCollaborator.photoUrl);
           }
         } catch (err: any) {
-          toast.error(err.message || 'Erro ao fazer upload da foto');
+          toast.error('Não foi possível enviar a foto. Tente novamente.');
           return;
         } finally {
           setUploadingPhoto(false);
@@ -308,7 +308,7 @@ export const CollaboratorsManagement: React.FC = () => {
       handleCloseModal();
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || 'Erro ao salvar colaborador');
+      toast.error('Não foi possível salvar o colaborador. Tente novamente.');
     } finally {
       setLoading(false);
       setUploadingPhoto(false);
@@ -346,7 +346,7 @@ export const CollaboratorsManagement: React.FC = () => {
       setCollaborators(prev => prev.filter(c => c.id !== collaboratorId));
       toast.success('Colaborador excluído com sucesso!');
     } catch (err: any) {
-      toast.error('Erro ao excluir colaborador');
+      toast.error('Não foi possível excluir o colaborador. Tente novamente.');
     } finally {
       setLoading(false);
       setConfirmDialog({ isOpen: false, collaboratorId: null, collaboratorName: null });

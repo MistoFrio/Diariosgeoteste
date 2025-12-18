@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Edit, Check } from 'lucide-react';
 
 export interface PDADiaryPile {
   nome: string;
@@ -8,6 +9,7 @@ export interface PDADiaryPile {
   cargaTrabalhoTf: string; // número em string
   cargaEnsaioTf: string; // número em string
   confirmado?: boolean;
+  isExpanded?: boolean;
 }
 
 export interface PDADiaryFormData {
@@ -70,8 +72,44 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
 
   const addRow = () => {
     setField((d) => {
-      d.piles.push({ nome: '', tipo: '', diametroCm: '', profundidadeM: '', cargaTrabalhoTf: '', cargaEnsaioTf: '', confirmado: false });
+      d.piles.unshift({ nome: '', tipo: '', diametroCm: '', profundidadeM: '', cargaTrabalhoTf: '', cargaEnsaioTf: '', confirmado: false, isExpanded: true });
     });
+  };
+
+  const confirmRow = (index: number) => {
+    setField((d) => {
+      const row = d.piles[index];
+      const hasData = row.nome.trim() || 
+                     row.tipo.trim() || 
+                     row.diametroCm.trim() || 
+                     row.profundidadeM.trim() || 
+                     row.cargaTrabalhoTf.trim() || 
+                     row.cargaEnsaioTf.trim();
+      
+      if (hasData) {
+        row.confirmado = true;
+        row.isExpanded = false;
+        
+        // Move estaca confirmada para o final
+        const confirmedRow = d.piles.splice(index, 1)[0];
+        d.piles.push(confirmedRow);
+      }
+    });
+  };
+
+  const toggleExpandRow = (index: number) => {
+    setField((d) => {
+      d.piles[index].isExpanded = !d.piles[index].isExpanded;
+    });
+  };
+
+  const isRowEmpty = (row: PDADiaryPile) => {
+    return !row.nome.trim() && 
+           !row.tipo.trim() && 
+           !row.diametroCm.trim() && 
+           !row.profundidadeM.trim() && 
+           !row.cargaTrabalhoTf.trim() && 
+           !row.cargaEnsaioTf.trim();
   };
 
   const removeRow = (index: number) => {
@@ -158,8 +196,57 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
                 </tr>
               </thead>
               <tbody>
-                {value.piles.map((row, idx) => (
-                  <tr key={idx} className="border-b border-gray-100 dark:border-gray-800">
+                {value.piles.map((row, idx) => {
+                  const isEmpty = isRowEmpty(row);
+                  const isConfirmed = row.confirmado === true;
+                  const isExpanded = row.isExpanded !== false || isEmpty;
+                  
+                  // Estaca compilada (confirmada e não expandida) - mostrar como linha resumida
+                  if (isConfirmed && !isExpanded) {
+                    return (
+                      <tr key={idx} className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                        <td colSpan={6} className="py-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 flex-1">
+                              <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {row.nome || 'Estaca sem nome'}
+                              </span>
+                              <span className="text-xs text-gray-600 dark:text-gray-400">
+                                {[
+                                  row.tipo && `Tipo: ${row.tipo}`,
+                                  row.diametroCm && `Ø: ${row.diametroCm}cm`,
+                                  row.profundidadeM && `Prof: ${row.profundidadeM}m`,
+                                  row.cargaTrabalhoTf && `Carga: ${row.cargaTrabalhoTf}tf`
+                                ].filter(Boolean).join(' • ')}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => toggleExpandRow(idx)}
+                                className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                title="Editar estaca"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeRow(idx)}
+                                className="text-red-600 hover:text-red-700 text-xs font-medium"
+                              >
+                                Remover
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+                  
+                  // Estaca expandida (em edição)
+                  return (
+                    <tr key={idx} className="border-b border-gray-100 dark:border-gray-800">
                     <td className="py-2 pr-3">
                       <input
                         type="text"
@@ -221,11 +308,21 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
                         onChange={(e) => updateRow(idx, (p) => { p.cargaEnsaioTf = e.target.value; })}
                         className="w-28 px-2 py-1.5 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
                         placeholder="60"
-                        disabled={row.confirmado}
+                        disabled={isConfirmed && !isExpanded}
                       />
                     </td>
                     <td className="py-2 pl-3">
-                      {row.confirmado ? (
+                      <div className="flex items-center gap-2">
+                        {!isEmpty && !isConfirmed && (
+                          <button
+                            type="button"
+                            onClick={() => confirmRow(idx)}
+                            className="px-2 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 transition-colors flex items-center gap-1"
+                          >
+                            <Check className="w-3 h-3" />
+                            Confirmar
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => removeRow(idx)}
@@ -233,30 +330,92 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
                         >
                           Remover
                         </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setField((d) => {
-                              d.piles[idx].confirmado = true;
-                            });
-                          }}
-                          className="text-green-600 hover:text-green-700 text-xs font-medium"
-                        >
-                          Confirmar estaca
-                        </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           {/* Cards responsivos no mobile */}
           <div className="md:hidden space-y-3">
-            {value.piles.map((row, idx) => (
-              <div key={idx} className="border border-gray-200 dark:border-gray-800 rounded-lg p-3">
+            {value.piles.map((row, idx) => {
+              const isEmpty = isRowEmpty(row);
+              const isConfirmed = row.confirmado === true;
+              const isExpanded = row.isExpanded !== false || isEmpty;
+              
+              // Estaca compilada (confirmada e não expandida)
+              if (isConfirmed && !isExpanded) {
+                return (
+                  <div key={idx} className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 bg-gray-50 dark:bg-gray-800/50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {row.nome || 'Estaca sem nome'}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                          {[
+                            row.tipo && `Tipo: ${row.tipo}`,
+                            row.diametroCm && `Ø: ${row.diametroCm}cm`,
+                            row.profundidadeM && `Prof: ${row.profundidadeM}m`,
+                            row.cargaTrabalhoTf && `Carga: ${row.cargaTrabalhoTf}tf`
+                          ].filter(Boolean).join(' • ')}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleExpandRow(idx)}
+                          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                          title="Editar estaca"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeRow(idx)}
+                          className="text-red-600 hover:text-red-700 text-xs font-medium"
+                        >
+                          Remover
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // Estaca expandida (em edição)
+              return (
+                <div key={idx} className="border border-gray-200 dark:border-gray-800 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {row.nome || 'Nova Estaca'}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {!isEmpty && !isConfirmed && (
+                        <button
+                          type="button"
+                          onClick={() => confirmRow(idx)}
+                          className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition-colors flex items-center gap-1"
+                        >
+                          <Check className="w-3 h-3" />
+                          Confirmar
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeRow(idx)}
+                        className="text-red-600 hover:text-red-700 text-xs font-medium"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Nome</label>
@@ -323,25 +482,9 @@ export const PDADiaryForm: React.FC<PDADiaryFormProps> = ({ value, onChange }) =
                     />
                   </div>
                 </div>
-                <div className="mt-3">
-                  {row.confirmado ? (
-                    <button type="button" onClick={() => removeRow(idx)} className="text-red-600 hover:text-red-700 text-xs font-medium">Remover</button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setField((d) => {
-                          d.piles[idx].confirmado = true;
-                        });
-                      }}
-                      className="text-green-600 hover:text-green-700 text-xs font-medium"
-                    >
-                      Confirmar estaca
-                    </button>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
