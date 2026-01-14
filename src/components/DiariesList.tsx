@@ -20,6 +20,28 @@ interface DiariesListProps {
   onNewDiary: () => void;
 }
 
+// Função para formatar endereço: usar "S/R" se rua vazia, "S/N" se número vazio
+const formatAddress = (address: string | null | undefined, enderecoDetalhado: any): string => {
+  // Se houver endereço detalhado, montar a partir dele
+  if (enderecoDetalhado && typeof enderecoDetalhado === 'object') {
+    const rua = enderecoDetalhado.rua?.trim() || 'S/R';
+    const numero = enderecoDetalhado.numero?.trim() || 'S/N';
+    const cidade = enderecoDetalhado.cidade_nome?.trim() || '';
+    const estado = enderecoDetalhado.estado_nome?.trim() || '';
+    
+    if (cidade && estado) {
+      return `${rua}, ${numero}, ${cidade}, ${estado}`;
+    } else if (cidade || estado) {
+      return `${rua}, ${numero}${cidade ? `, ${cidade}` : ''}${estado ? `, ${estado}` : ''}`;
+    } else {
+      return `${rua}, ${numero}`;
+    }
+  }
+  
+  // Se não houver endereço detalhado, usar o address como está
+  return address || '-';
+};
+
 export const DiariesList: React.FC<DiariesListProps> = ({ onNewDiary }) => {
   const { user } = useAuth();
   const toast = useToast();
@@ -307,11 +329,14 @@ export const DiariesList: React.FC<DiariesListProps> = ({ onNewDiary }) => {
             else if (pitByDiary.has(r.id)) inferredType = 'PIT';
             else if (pceByDiary.has(r.id)) inferredType = 'PCE';
           }
+          // Formatar endereço com S/R e S/N quando necessário
+          const enderecoFormatado = formatAddress(r.address, r.endereco_detalhado);
+          
           return {
             id: r.id,
             clientId: r.user_id,
             clientName: r.client_name,
-            address: r.address,
+            address: enderecoFormatado,
             enderecoDetalhado: r.endereco_detalhado || undefined,
             team: r.team,
             type: inferredType as any,

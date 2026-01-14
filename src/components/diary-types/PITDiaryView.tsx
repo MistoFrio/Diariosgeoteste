@@ -13,7 +13,7 @@ export const PITDiaryView: React.FC<PITDiaryViewProps> = ({ diary, pitDetail = {
   return (
     <PdfLayout diary={diary} title="DIÁRIO DE OBRA • PIT">
       <PdfSection columns={5} title="Identificação">
-        <PdfRow label="Equipamento" value={pitDetail.equipamento || diary.equipment || 'PIT'} />
+        <PdfRow label="Equipamento" value={pitDetail.equipamento || 'PIT'} />
         <PdfRow label="Início" value={diary.startTime || '-'} />
         <PdfRow label="Término" value={diary.endTime || '-'} />
         <PdfRow label="Equipe" value={diary.team} span={2} />
@@ -24,7 +24,7 @@ export const PITDiaryView: React.FC<PITDiaryViewProps> = ({ diary, pitDetail = {
         <div className="bg-gray-200 border-b border-gray-400 px-0.5 py-0.5 font-bold uppercase text-[6px] flex items-center">
           Clima
         </div>
-        <div className="px-0.5 py-1 flex items-center gap-4 text-[7px]">
+        <div className="px-0.5 py-1 flex items-center gap-4 text-[7px]" style={{ alignItems: 'center', display: 'flex' }}>
           <PdfValue label="Ensolarado" checked={!!diary?.weather_ensolarado} />
           <PdfValue label="Chuva fraca" checked={!!diary?.weather_chuva_fraca} />
           <PdfValue label="Chuva forte" checked={!!diary?.weather_chuva_forte} />

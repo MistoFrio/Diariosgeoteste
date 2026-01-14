@@ -23,7 +23,7 @@ export const PCEDiaryView: React.FC<PCEDiaryViewProps> = ({ diary, pceDetail = {
   return (
     <PdfLayout diary={diary} title="DIÁRIO DE OBRA • PCE">
       <PdfSection columns={5} title="Identificação">
-        <PdfRow label="Equipamento" value={pceDetail.equipamento || diary.equipment || 'PCE'} />
+        <PdfRow label="Equipamento" value={pceDetail.cravacao_equipamento || 'PCE'} />
         <PdfRow label="Início" value={diary.startTime || '-'} />
         <PdfRow label="Término" value={diary.endTime || '-'} />
         <PdfRow label="Equipe" value={diary.team} span={2} />

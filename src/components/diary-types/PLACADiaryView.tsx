@@ -13,7 +13,7 @@ export const PLACADiaryView: React.FC<PLACADiaryViewProps> = ({ diary, placaDeta
   return (
     <PdfLayout diary={diary} title="DIÁRIO DE OBRA • PLACA">
       <PdfSection columns={5} title="Identificação">
-        <PdfRow label="Equipamento" value={placaDetail.equipamentos_equipamento_reacao || diary.equipment || 'PLACA'} />
+        <PdfRow label="Equipamento" value={placaDetail.equipamentos_equipamento_reacao || 'PLACA'} />
         <PdfRow label="Início" value={diary.startTime || '-'} />
         <PdfRow label="Término" value={diary.endTime || '-'} />
         <PdfRow label="Equipe" value={diary.team} span={2} />

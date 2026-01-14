@@ -276,34 +276,42 @@ export async function exportElementToPDF(
       let sectionProcessed = false;
       
       // Prioridade: Assinaturas primeiro (sempre no final), depois outras seções
-      // Verificar assinaturas primeiro com tratamento especial
+      // Verificar assinaturas primeiro com tratamento especial - NUNCA cortar assinaturas
       if (assinaturasInfo) {
         const assinaturasTop = assinaturasInfo.topCanvas;
         const assinaturasBottom = assinaturasInfo.bottomCanvas;
+        const assinaturasHeight = assinaturasBottom - assinaturasTop;
         
         // Se a assinatura já começou na página anterior mas ainda está sendo renderizada
         if (assinaturasTop < pageTop && assinaturasBottom > pageTop) {
-          // Continuar renderizando até o final da assinatura
+          // Continuar renderizando até o final da assinatura (já está sendo renderizada)
           sliceHeightPx = Math.min(assinaturasBottom - renderedHeightPx, canvas.height - renderedHeightPx);
           sectionProcessed = true;
           needsPageBreak = false;
         }
-        // Se a assinatura começa nesta página ou está próxima do conteúdo atual
+        // Se a assinatura começa nesta página
         else if (assinaturasTop >= pageTop) {
-          // Calcular o espaço necessário para incluir a assinatura completa
-          const spaceNeeded = assinaturasBottom - renderedHeightPx;
+          // Calcular o espaço disponível na página atual a partir do início da assinatura
+          const availableSpace = pageBottom - assinaturasTop;
+          const spaceBefore = assinaturasTop - renderedHeightPx;
           
-          // Se a assinatura cabe na página (permitindo até 20% de extensão se necessário)
-          if (spaceNeeded <= pageHeightPx * 1.2) {
-            // Sempre incluir a assinatura completa nesta página
-            sliceHeightPx = Math.min(spaceNeeded, canvas.height - renderedHeightPx);
-            sectionProcessed = true;
-            needsPageBreak = false;
+          // REGRA RÍGIDA: Se a assinatura NÃO cabe completamente na página atual, mover para próxima página
+          if (assinaturasHeight > availableSpace) {
+            // Se há pouco espaço antes da assinatura (< 10% da página), pular para a próxima página
+            if (spaceBefore < pageHeightPx * 0.1) {
+              newRenderedHeight = assinaturasTop;
+              needsPageBreak = true;
+              sectionProcessed = true;
+            } else {
+              // Usar o espaço antes da assinatura (a assinatura começará no topo da próxima página)
+              sliceHeightPx = spaceBefore;
+              sectionProcessed = true;
+            }
           }
-          // Se a assinatura não cabe mesmo estendendo, mas está muito próxima
-          else if (assinaturasTop - renderedHeightPx < pageHeightPx * 0.3) {
-            // Incluir mesmo assim (a assinatura é pequena, então deve caber)
-            sliceHeightPx = Math.min(assinaturasBottom - renderedHeightPx, canvas.height - renderedHeightPx);
+          // Se a assinatura cabe completamente, incluir ela inteira nesta página
+          else {
+            const spaceNeeded = assinaturasBottom - renderedHeightPx;
+            sliceHeightPx = Math.min(spaceNeeded, canvas.height - renderedHeightPx);
             sectionProcessed = true;
             needsPageBreak = false;
           }
@@ -317,9 +325,12 @@ export async function exportElementToPDF(
           // Pular assinaturas (já processadas acima)
           if (sectionInfo === assinaturasInfo) continue;
           
+          const sectionTop = sectionInfo.topCanvas;
+          const sectionBottom = sectionInfo.bottomCanvas;
+          const sectionHeight = sectionBottom - sectionTop;
+          
           // Se a seção começa exatamente no início desta página, garantir que ela caiba inteira
-          if (sectionInfo.topCanvas === renderedHeightPx) {
-            const sectionHeight = sectionInfo.bottomCanvas - sectionInfo.topCanvas;
+          if (sectionTop === renderedHeightPx) {
             // Se a seção cabe na página, usar toda a altura dela
             if (sectionHeight <= pageHeightPx) {
               sliceHeightPx = Math.min(sectionHeight, canvas.height - renderedHeightPx);
@@ -334,15 +345,19 @@ export async function exportElementToPDF(
             }
           }
           
-          // Se a seção seria cortada, ajustar
-          if (sectionWouldBreak(sectionInfo)) {
-            // Se a seção começa nesta página mas não cabe
-            if (sectionInfo.topCanvas >= pageTop && sectionInfo.topCanvas < pageBottom) {
-              // Cortar a página ANTES do início da seção para mantê-la íntegra
-              const spaceBefore = sectionInfo.topCanvas - renderedHeightPx;
-              // Se há pouco espaço antes da seção (< 10% da página), pular para a próxima página
-              if (spaceBefore < pageHeightPx * 0.1) {
-                newRenderedHeight = sectionInfo.topCanvas;
+          // Se a seção começa nesta página (mas não no início exato)
+          if (sectionTop > renderedHeightPx && sectionTop < pageBottom) {
+            // Calcular o espaço disponível na página atual
+            const availableSpace = pageBottom - sectionTop;
+            const spaceBefore = sectionTop - renderedHeightPx;
+            const spaceFromTop = sectionTop - pageTop;
+            
+            // Se a seção NÃO cabe completamente na página atual, mover para próxima página
+            if (sectionHeight > availableSpace) {
+              // Cortar a página ANTES do início da seção
+              // Se há pouco espaço antes da seção (< 5% da página), pular para a próxima página
+              if (spaceBefore < pageHeightPx * 0.05) {
+                newRenderedHeight = sectionTop;
                 needsPageBreak = true;
                 sectionProcessed = true;
                 break;
@@ -352,9 +367,25 @@ export async function exportElementToPDF(
                 sectionProcessed = true;
                 break;
               }
-            } else if (sectionInfo.topCanvas < pageTop && sectionInfo.bottomCanvas > pageTop) {
+            }
+            
+            // Se a seção começa nos últimos 20% da página e não cabe completamente, mover para próxima página
+            // Isso evita que seções sejam cortadas no meio
+            if (spaceFromTop > pageHeightPx * 0.8 && sectionHeight > availableSpace * 0.5) {
+              // Mover a seção para a próxima página
+              sliceHeightPx = spaceBefore;
+              sectionProcessed = true;
+              break;
+            }
+            
+            // Se a seção cabe, continuar normalmente (não fazer nada especial)
+          }
+          
+          // Se a seção seria cortada (começou na página anterior)
+          if (sectionWouldBreak(sectionInfo)) {
+            if (sectionTop < pageTop && sectionBottom > pageTop) {
               // Seção começou na página anterior, pular para onde ela termina
-              newRenderedHeight = sectionInfo.bottomCanvas;
+              newRenderedHeight = sectionBottom;
               needsPageBreak = true;
               sectionProcessed = true;
               break;

@@ -30,7 +30,7 @@ export const PDADiaryView: React.FC<PDADiaryViewProps> = ({
   return (
     <PdfLayout diary={diary} title="DIÁRIO DE OBRA • PDA">
       <PdfSection columns={5} title="Identificação">
-        <PdfRow label="Equipamento" value={diary.equipment || 'PDA'} />
+        <PdfRow label="Equipamento" value={pdaDiarioDetail?.pda_computadores ? (Array.isArray(pdaDiarioDetail.pda_computadores) ? pdaDiarioDetail.pda_computadores.join(', ') : pdaDiarioDetail.pda_computadores) : 'PDA'} />
         <PdfRow label="Início" value={diary.startTime || '-'} />
         <PdfRow label="Término" value={diary.endTime || '-'} />
         <PdfRow label="Equipe" value={diary.team} span={2} />

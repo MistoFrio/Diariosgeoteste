@@ -301,7 +301,10 @@ export const NewDiary: React.FC<NewDiaryProps> = ({ onBack }) => {
         return;
       }
 
-      const enderecoCompleto = `${enderecoDetalhado.rua.trim()}, ${enderecoDetalhado.numero.trim()}, ${cidadeNome}, ${estado.nome}`;
+      // Formatar rua e número: usar "S/R" se rua vazia, "S/N" se número vazio
+      const ruaFormatada = enderecoDetalhado.rua.trim() || 'S/R';
+      const numeroFormatado = enderecoDetalhado.numero.trim() || 'S/N';
+      const enderecoCompleto = `${ruaFormatada}, ${numeroFormatado}, ${cidadeNome}, ${estado.nome}`;
 
       const payload: any = {
         user_id: user.id,
