@@ -62,7 +62,7 @@ export const PdfSection: React.FC<PdfSectionProps> = ({ title, columns = 3, chil
   const isAssinaturas = title?.toUpperCase().includes('ASSINATURA');
   return (
     <section 
-      className="border border-gray-400 overflow-hidden w-full"
+      className={`border border-gray-400 overflow-hidden w-full ${isAssinaturas ? 'border-b-2 border-b-gray-700' : ''}`}
       data-pdf-section={isAssinaturas ? 'assinaturas' : undefined}
     >
       {title && (

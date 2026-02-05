@@ -696,7 +696,7 @@ export const DiariesList: React.FC<DiariesListProps> = ({ onNewDiary }) => {
         </div>
 
         {/* Diary Details - Container responsivo */}
-        <div ref={detailsRef} className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden w-full">
+        <div ref={detailsRef} className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 overflow-hidden w-full">
           <DiaryPDFLayout
             diary={selectedDiary}
             pceDetail={pceDetail}

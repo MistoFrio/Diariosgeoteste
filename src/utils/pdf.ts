@@ -277,15 +277,21 @@ export async function exportElementToPDF(
       
       // Prioridade: Assinaturas primeiro (sempre no final), depois outras seções
       // Verificar assinaturas primeiro com tratamento especial - NUNCA cortar assinaturas
+      // REGRA PRINCIPAL: A assinatura é SEMPRE a última seção, então quando ela couber,
+      // renderizamos TODO o conteúdo restante do documento (incluindo qualquer fechamento visual)
       if (assinaturasInfo) {
         const assinaturasTop = assinaturasInfo.topCanvas;
         const assinaturasBottom = assinaturasInfo.bottomCanvas;
         const assinaturasHeight = assinaturasBottom - assinaturasTop;
+        // Usar o final do canvas como ponto de referência final (inclui footer/fechamento)
+        const documentEnd = canvas.height;
+        // Altura total que precisamos renderizar (assinatura + tudo que vem depois)
+        const totalRemainingFromAssinatura = documentEnd - assinaturasTop;
         
         // Se a assinatura já começou na página anterior mas ainda está sendo renderizada
         if (assinaturasTop < pageTop && assinaturasBottom > pageTop) {
-          // Continuar renderizando até o final da assinatura (já está sendo renderizada)
-          sliceHeightPx = Math.min(assinaturasBottom - renderedHeightPx, canvas.height - renderedHeightPx);
+          // Continuar renderizando até o FINAL do documento (não apenas da assinatura)
+          sliceHeightPx = Math.min(documentEnd - renderedHeightPx, canvas.height - renderedHeightPx);
           sectionProcessed = true;
           needsPageBreak = false;
         }
@@ -295,8 +301,8 @@ export async function exportElementToPDF(
           const availableSpace = pageBottom - assinaturasTop;
           const spaceBefore = assinaturasTop - renderedHeightPx;
           
-          // REGRA RÍGIDA: Se a assinatura NÃO cabe completamente na página atual, mover para próxima página
-          if (assinaturasHeight > availableSpace) {
+          // REGRA RÍGIDA: Se todo o conteúdo restante (assinatura + footer) NÃO cabe, mover para próxima página
+          if (totalRemainingFromAssinatura > availableSpace) {
             // Se há pouco espaço antes da assinatura (< 10% da página), pular para a próxima página
             if (spaceBefore < pageHeightPx * 0.1) {
               newRenderedHeight = assinaturasTop;
@@ -308,10 +314,10 @@ export async function exportElementToPDF(
               sectionProcessed = true;
             }
           }
-          // Se a assinatura cabe completamente, incluir ela inteira nesta página
+          // Se TODO o conteúdo restante cabe completamente, incluir tudo nesta página
           else {
-            const spaceNeeded = assinaturasBottom - renderedHeightPx;
-            sliceHeightPx = Math.min(spaceNeeded, canvas.height - renderedHeightPx);
+            // Renderizar até o FINAL do documento
+            sliceHeightPx = documentEnd - renderedHeightPx;
             sectionProcessed = true;
             needsPageBreak = false;
           }
