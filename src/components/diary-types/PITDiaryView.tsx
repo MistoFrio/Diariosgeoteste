@@ -34,7 +34,7 @@ export const PITDiaryView: React.FC<PITDiaryViewProps> = ({ diary, pitDetail = {
       <PdfSection columns={4} title="Dados do ensaio">
         <PdfRow label="Total estacas" value={pitDetail.total_estacas || '-'} />
         <PdfRow label="Estacas ensaiadas" value={pitDetail.estacas_ensaiadas || '-'} />
-        <PdfRow label="Horímetro" value={pitDetail.horimetro || '-'} />
+        <PdfRow label="Horímetro" value={pitDetail.horimetro || '-'} span={2} />
         <PdfRow label="Ocorrências" value={pitDetail.ocorrencias || diary.observations || '-'} span={4} />
       </PdfSection>
 

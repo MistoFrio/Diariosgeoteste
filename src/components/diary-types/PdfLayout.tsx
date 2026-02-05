@@ -34,8 +34,8 @@ export const PdfLayout: React.FC<PdfLayoutProps> = ({ diary, title, children }) 
   return (
     <div className="w-full py-1">
       <div className="max-w-[1600px] mx-auto px-0">
-        <div className="mx-auto w-full max-w-[1460px] bg-white text-gray-900 border border-gray-200 rounded-md pt-0.5 px-0.5 pb-0.5 flex flex-col gap-0 box-border">
-          <header className="flex items-center justify-between border-b border-gray-300 pb-0.5 gap-1.5 w-full">
+        <div className="mx-auto w-full max-w-[1460px] bg-white text-gray-900 border border-gray-200 rounded-none pt-0.5 px-0.5 pb-0.5 flex flex-col gap-0 box-border">
+          <header className="flex items-center justify-between border-b border-gray-200 pb-0.5 gap-1.5 w-full">
             <div className="flex items-center gap-0.5 flex-shrink-0">
               <img src="/logogeoteste.png" alt="Geoteste" className="h-3.5 flex-shrink-0" />
               <h1 className="text-[7px] font-serif font-semibold tracking-wide leading-tight whitespace-nowrap">
@@ -61,8 +61,8 @@ export const PdfSection: React.FC<PdfSectionProps> = ({ title, columns = 3, chil
   const template = `repeat(${columns}, minmax(0, 1fr))`;
   const isAssinaturas = title?.toUpperCase().includes('ASSINATURA');
   return (
-    <section 
-      className={`border border-gray-400 overflow-hidden w-full ${isAssinaturas ? 'border-b-2 border-b-gray-700' : ''}`}
+    <section
+      className="border border-gray-400 overflow-hidden w-full"
       data-pdf-section={isAssinaturas ? 'assinaturas' : undefined}
     >
       {title && (
